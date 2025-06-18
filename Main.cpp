@@ -427,7 +427,7 @@ int main() {
     PatternGrid patternGrid(3, 3, 50);
     ColorPanel colorPanel(font);
     TilePalette tilePalette(50, sf::Vector2f(20, 60));
-    Canvas canvas(150, 150, 6, sf::Vector2f(360, 20));
+    Canvas canvas(150, 150, 3, sf::Vector2f(360, 20));
     CanvasView canvasView(sf::Vector2f(360, 20), window.getSize());
 
     // ===== 新しいツールシステム =====
