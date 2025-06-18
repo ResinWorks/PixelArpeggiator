@@ -20,7 +20,7 @@ private:
 
 public:
     CanvasView(const sf::Vector2f& basePos, const sf::Vector2u& winSize)
-        : zoomLevel(1.0f)
+        : zoomLevel(2.0f)
         , panOffset(0.0f, 0.0f)
         , basePosition(basePos)
         , windowSize(winSize) {}

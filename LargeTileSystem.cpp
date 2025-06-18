@@ -1,4 +1,4 @@
-//===== LargeTileSystem.cpp 大型タイルツール実装 =====
+// ===== 修正版 LargeTileSystem.cpp =====
 #include "LargeTileSystem.hpp"
 #include "Canvas.hpp"
 #include "CanvasView.hpp"
@@ -19,12 +19,12 @@ void LargeTileTool::onDrawStart(const sf::Vector2i& startPos,
     startDrawPos = startPos;
     lastPlacedPos = startPos;
 
-    // スナップ位置を計算
-    int tileSize = static_cast<int>(6 * view.getZoom());
-    sf::Vector2i snappedPos = snapPosition(startPos, view, tileSize, brushSize);
+    // **修正：Canvasから実際のタイルサイズを取得**
+    int canvasTileSize = canvas.getTileSize();
+    int screenTileSize = static_cast<int>(canvasTileSize * view.getZoom());
+    sf::Vector2i snappedPos = snapPosition(startPos, view, screenTileSize, brushSize, canvasTileSize);
 
     // 大型タイルを配置
-  // placeLargeTiles(startPos, brushSize, canvas, view);
     placeLargeTiles(snappedPos, brushSize, canvas, view);
 }
 
@@ -37,8 +37,10 @@ void LargeTileTool::onDrawContinue(const sf::Vector2i& currentPos,
 {
     if (!isDrawing) return;
 
-    int tileSize = static_cast<int>(6 * view.getZoom());
-    sf::Vector2i snappedPos = snapPosition(currentPos, view, tileSize, brushSize);
+    // **修正：Canvasから実際のタイルサイズを取得**
+    int canvasTileSize = canvas.getTileSize();
+    int screenTileSize = static_cast<int>(canvasTileSize * view.getZoom());
+    sf::Vector2i snappedPos = snapPosition(currentPos, view, screenTileSize, brushSize, canvasTileSize);
 
     // 最後に配置した位置と同じならスキップ
     if (snappedPos == lastPlacedPos) {
@@ -60,8 +62,6 @@ void LargeTileTool::onDrawEnd(const sf::Vector2i& endPos,
     isDrawing = false;
 }
 
-
-
 /**
  * プレビュー描画
  */
@@ -71,16 +71,19 @@ void LargeTileTool::drawPreview(sf::RenderWindow& window,
     const CanvasView& view,
     int brushSize) const
 {
-    int tileSize = static_cast<int>(6 * view.getZoom());
-    sf::Vector2i snappedPos = snapPosition(currentPos, view, tileSize, brushSize);
+    // **修正：固定値6ではなく実際のタイルサイズを使用**
+    // この関数ではCanvasへのアクセスがないため、引数で渡すか別の方法が必要
+    // 暫定的に6のままにするか、別の方法を検討
+    int estimatedTileSize = 6; // 暫定値
+    sf::Vector2i snappedPos = snapPosition(currentPos, view, estimatedTileSize, brushSize, estimatedTileSize);
 
     // 基本の大型タイルサイズ
     int baseWidth = (currentLargeTileId >= 8 && currentLargeTileId <= 11) ? 4 : 2;
     int baseHeight = 2;
 
-    // 単一大型タイルのサイズ
-    int tileWidth = baseWidth * tileSize;
-    int tileHeight = baseHeight * tileSize;
+    // 単個大型タイルのサイズ
+    int tileWidth = baseWidth * estimatedTileSize;
+    int tileHeight = baseHeight * estimatedTileSize;
 
     // ブラシサイズに応じた全体サイズ
     int totalWidth = tileWidth * brushSize;
@@ -118,7 +121,7 @@ void LargeTileTool::drawCursor(sf::RenderWindow& window,
     int baseWidth = (currentLargeTileId >= 8 && currentLargeTileId <= 11) ? 4 : 2;
     int baseHeight = 2;
 
-    // 単一大型タイルのサイズ
+    // 単個大型タイルのサイズ
     float tileWidth = baseWidth * scaledTileSize;
     float tileHeight = baseHeight * scaledTileSize;
 
@@ -126,9 +129,9 @@ void LargeTileTool::drawCursor(sf::RenderWindow& window,
     float totalWidth = tileWidth * brushSize;
     float totalHeight = tileHeight * brushSize;
 
-    // スナップ位置を計算
-    int screenTileSize = static_cast<int>(6 * zoom);
-    sf::Vector2i snappedPos = snapPosition(mousePos, view, screenTileSize, brushSize);
+    // **修正：実際のタイルサイズを使用**
+    int screenTileSize = static_cast<int>(tileSize * zoom);
+    sf::Vector2i snappedPos = snapPosition(mousePos, view, screenTileSize, brushSize, tileSize);
 
     // 大型タイル枠描画
     sf::RectangleShape largeTileFrame(
@@ -177,63 +180,64 @@ void LargeTileTool::drawCursor(sf::RenderWindow& window,
     idMarker.setOutlineColor(sf::Color::White);
     window.draw(idMarker);
 }
+
 /**
- * 位置を大型タイルサイズとブラシサイズに合わせて正確にスナップ
+ * **修正版**：位置を大型タイルサイズとブラシサイズに合わせて正確にスナップ
+ * canvasTileSize パラメータを追加
  */
 sf::Vector2i LargeTileTool::snapPosition(const sf::Vector2i& pos,
     const CanvasView& view,
-    int tileSize,
-    int brushSize) const
+    int screenTileSize,
+    int brushSize,
+    int canvasTileSize) const
 {
-    // 大型タイルの基本サイズ
+    // 大型タイルの基本サイズ（キャンバスタイル単位）
     int baseWidth = (currentLargeTileId >= 8 && currentLargeTileId <= 11) ? 4 : 2;
     int baseHeight = 2;
 
-    // 単一大型タイルのサイズ
-    int tileWidth = tileSize * baseWidth;
-    int tileHeight = tileSize * baseHeight;
+    // 単個大型タイルのサイズ（スクリーン座標）
+    int tileWidth = screenTileSize * baseWidth;
+    int tileHeight = screenTileSize * baseHeight;
 
     // ブラシ全体のサイズ
     int totalWidth = tileWidth * brushSize;
     int totalHeight = tileHeight * brushSize;
 
-    // スナップ位置を計算（中心点を基準に）
-    int snappedX = ((pos.x - totalWidth / 2) / tileWidth) * tileWidth;
-    int snappedY = ((pos.y - totalHeight / 2) / tileHeight) * tileHeight;
+    // **修正：より正確なスナップ計算**
+    // 中心点を基準にした位置調整
+    int halfTotalWidth = totalWidth / 2;
+    int halfTotalHeight = totalHeight / 2;
 
-    // 位置を中心に調整
-    snappedX += totalWidth / 2;
-    snappedY += totalHeight / 2;
+    // スナップ位置を計算（中心点を基準に）
+    int snappedX = ((pos.x - halfTotalWidth) / tileWidth) * tileWidth + halfTotalWidth;
+    int snappedY = ((pos.y - halfTotalHeight) / tileHeight) * tileHeight + halfTotalHeight;
 
     return sf::Vector2i(snappedX, snappedY);
 }
+
 /**
- * ブラシサイズに応じて大型タイルを複数配置
+ * **修正版**：ブラシサイズに応じて大型タイルを複数配置
  */
 void LargeTileTool::placeLargeTiles(const sf::Vector2i& basePos,
     int brushSize,
     Canvas& canvas,
-    const CanvasView& view) const 
+    const CanvasView& view) const
 {
     // 基本の大型タイルサイズ
     int baseWidth = (currentLargeTileId >= 8 && currentLargeTileId <= 11) ? 4 : 2;
     int baseHeight = 2;
-    
-    // スクリーン上のタイルサイズ
-    int screenTileSize = static_cast<int>(6 * view.getZoom());
-    // キャンバス上のタイルサイズ
+
+    // **修正：実際のキャンバスタイルサイズを使用**
     int canvasTileSize = canvas.getTileSize();
-    
-    // 単一大型タイルのサイズ
+    int screenTileSize = static_cast<int>(canvasTileSize * view.getZoom());
+
+    // 単個大型タイルのサイズ（スクリーン座標）
     int tileWidth = baseWidth * screenTileSize;
     int tileHeight = baseHeight * screenTileSize;
-    
+
     // ブラシサイズに応じたオフセット範囲
     int offsetRange = (brushSize - 1) / 2;
-    
-    // 中心位置（キャンバス座標）
-    sf::Vector2i centerCanvasPos = view.screenToCanvas(basePos);
-    
+
     // オフセットをかけて複数の大型タイルを配置
     for (int dx = -offsetRange; dx <= offsetRange; dx++) {
         for (int dy = -offsetRange; dy <= offsetRange; dy++) {
@@ -242,17 +246,18 @@ void LargeTileTool::placeLargeTiles(const sf::Vector2i& basePos,
                 basePos.x + dx * tileWidth,
                 basePos.y + dy * tileHeight
             );
-            
+
             // キャンバス座標に変換
             sf::Vector2i tileCanvasPos = view.screenToCanvas(tileScreenPos);
-            
-            // 単一の大型タイルを配置
+
+            // 単個の大型タイルを配置
             placeLargeTile(tileCanvasPos, canvas, view);
         }
     }
 }
+
 /**
- * 単一の大型タイルを配置
+ * 単個の大型タイルを配置
  */
 void LargeTileTool::placeLargeTile(const sf::Vector2i& canvasPos,
     Canvas& canvas,

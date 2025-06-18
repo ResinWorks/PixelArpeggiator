@@ -29,6 +29,17 @@ private:
     int largeTileId;              // 大型タイル番号（0-11）
     TileArrangement arrangement;  // タイル配置情報
 
+    /**
+    * **修正版**：位置を大型タイルサイズとブラシサイズにスナップ
+    * @param pos 元の位置
+    * @param view CanvasViewインスタンス
+    * @param screenTileSize スクリーン上のタイルサイズ
+    * @param brushSize ブラシサイズ
+    * @param canvasTileSize キャンバスの実際のタイルサイズ
+    */
+   
+
+
 public:
     LargeTile(int id) : largeTileId(id) {
         calculateArrangement();
@@ -199,12 +210,13 @@ private:
        */
     sf::Vector2i snapPosition(const sf::Vector2i& pos,
         const CanvasView& view,
-        int tileSize,
-        int brushSize) const;
+        int screenTileSize,
+        int brushSize,
+        int canvasTileSize) const;
 
     /**
-     * 単一の大型タイルを配置
-     */
+       * 単個の大型タイルを配置
+       */
     void placeLargeTile(const sf::Vector2i& canvasPos,
         Canvas& canvas,
         const CanvasView& view) const;
