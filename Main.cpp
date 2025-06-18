@@ -77,7 +77,10 @@ public:
     }
 
     void initializeSliders(const sf::Font& font) {
-        // 既存のスライダー処理（変更なし）
+
+        // タイルグリッド線調整スライダー
+        /*
+        */
         sliders.emplace_back(sf::Vector2f(120, 10));
         sliders.emplace_back(sf::Vector2f(120, 10));
         sliders[0].setPosition(70, 550);
@@ -112,8 +115,8 @@ public:
         knobs[3].setFillColor(sf::Color::Green);
         knobs[4].setFillColor(sf::Color::Blue);
 
-        labels.emplace_back("Tile Spacing", font, 14);
-        labels.emplace_back("Tile Shrink", font, 14);
+        labels.emplace_back("Spacing", font, 14);
+        labels.emplace_back("Shrink", font, 14);
         labels[0].setPosition(20, 545);
         labels[1].setPosition(20, 575);
 
@@ -211,7 +214,10 @@ public:
         float& gridSpacing, float& gridShrink,
         sf::Color& tileGridColor) 
     {
-        // 既存のスライダー処理（変更なし）
+        // タイルグリッド調整スライダー
+        //1ピクセル１色対応なら表示しない
+        /*
+        */
         sf::FloatRect spacingBounds = sliders[0].getGlobalBounds();
         if (mousePressed && spacingBounds.contains(static_cast<sf::Vector2f>(mousePos))) {
             float ratio = (mousePos.x - spacingBounds.left) / spacingBounds.width;
@@ -413,7 +419,7 @@ public:
 
 
 int main() {
-    sf::RenderWindow window(sf::VideoMode(WINDOW_WIDTH, WINDOW_HEIGHT), "DotArpeggiator v3.0 ");
+    sf::RenderWindow window(sf::VideoMode(WINDOW_WIDTH, WINDOW_HEIGHT), "PixelArpeggiator v3.0 ");
     window.setFramerateLimit(120);
 
     sf::Font font;
@@ -427,7 +433,7 @@ int main() {
     PatternGrid patternGrid(3, 3, 50);
     ColorPanel colorPanel(font);
     TilePalette tilePalette(50, sf::Vector2f(20, 60));
-    Canvas canvas(150, 150, 3, sf::Vector2f(360, 20));
+    Canvas canvas(160, 160, 3, sf::Vector2f(360, 20));
     CanvasView canvasView(sf::Vector2f(360, 20), window.getSize());
 
     // ===== 新しいツールシステム =====
@@ -900,7 +906,7 @@ int main() {
         // キャンバス情報表示（新規追加）
         auto canvasSize = canvas.getCanvasPixelSize();
         std::string canvasInfo = "Canvas: " + std::to_string(canvasSize.first) + "x" + std::to_string(canvasSize.second) + " px";
-        drawText(window, font, canvasInfo, 14, sf::Vector2f(20, 780), sf::Color(200, 200, 200));
+        drawText(window, font, canvasInfo, 14, sf::Vector2f(20, 820), sf::Color(200, 200, 200));
 
 
         // 描画統計情報（デバッグ用、F1キー押下時表示）
