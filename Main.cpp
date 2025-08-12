@@ -24,6 +24,8 @@
 #include "LargeTilePaletteOverlay.hpp"
 #include <algorithm>
 
+extern LargeTileManager largeTileManager;
+
 const int WINDOW_WIDTH = 1600;
 const int WINDOW_HEIGHT = 900;
 
@@ -558,11 +560,16 @@ int main() {
 
     // ===== 新規追加：大型タイルパレットオーバーレイ =====
     LargeTilePaletteOverlay largeTilePaletteOverlay(sf::Vector2f(1350, 20), 50);  // TilePaletteと同じ座標・サイズ
-    // ===== 新規追加：大型タイル管理 =====
-      LargeTileManager largeTileManager;
-    // ===== 簡易設定：大型タイル番号をコードで指定 =====
     
-    int currentLargeTileId = 0;  // 0-11で指定（後でUI化可能）
+    
+    // ===== 新規追加：大型タイル管理 =====
+   //   LargeTileManager largeTileManager;
+    // ===== 簡易設定：大型タイル番号をコードで指定 =====
+    // ===== 大型タイルパレットオーバーレイ =====
+   // LargeTilePaletteOverlay largeTilePaletteOverlay(sf::Vector2f(1350, 20), 50);
+
+    // ===== 状態変数 =====
+        int currentLargeTileId = 0;  // 0-11で指定（後でUI化可能）
 
 
     while (window.isOpen()) {
@@ -594,43 +601,35 @@ int main() {
 
                 //追加：大型パレット処理---------------------------------------------------------------------------------------
                
-                 // ===== 新規追加：回転ボタンの処理 =====
+                // ===== 修正版：回転ボタンの処理 =====
                 if (uiManager.getButton(UIManager::ROTATE_BUTTON).isClicked(clickPos, true)) {
-                    largeTileManager.rotateCurrentTile(); // 現在選択中の大型タイルを回転
-
-                    // 大型タイルツールが選択されている場合、ツールに回転情報を反映
-                    if (drawingManager.getCurrentToolType() == ToolManager::ToolType::LARGE_TILE) {
-                        if (auto* largeTileTool = dynamic_cast<LargeTileTool*>(drawingManager.getCurrentTool())) {
-                            largeTileTool->setLargeTileId(currentLargeTileId);
-                        }
-                    }
+                    largeTileManager.rotateCurrentTile(); // グローバル変数に直接アクセス
+                    // setLargeTileId() の呼び出しは不要（ツールが自動的に最新状態を参照）
                 }
 
-                // ===== 新規追加：大型タイルパレット表示切り替え =====
+                // ===== 大型タイルパレット表示切り替え =====
                 if (uiManager.getButton(UIManager::LARGE_TILE_PALETTE_TOGGLE).isClicked(clickPos, true)) {
                     largeTilePaletteOverlay.setVisible(!largeTilePaletteOverlay.getVisible());
                 }
 
-                // ===== 新規追加：大型タイルパレットでの選択 =====
+                // ===== 修正版：大型タイルパレットでの選択 =====
                 if (largeTilePaletteOverlay.getVisible()) {
                     int clickedLargeTile = largeTilePaletteOverlay.handleClick(clickPos);
                     if (clickedLargeTile >= 0) {
+                        // ===== 修正：グローバル管理者を更新 =====
+                        largeTileManager.selectLargeTile(clickedLargeTile);
+
+                        // 表示用変数も更新（情報表示のため）
                         currentLargeTileId = clickedLargeTile;
-                        largeTileManager.selectLargeTile(currentLargeTileId);
 
                         // 大型タイルツールに切り替え
                         drawingManager.setTool(ToolManager::ToolType::LARGE_TILE);
 
-                        // 大型タイルツールに番号を設定
-                        if (auto* largeTileTool = dynamic_cast<LargeTileTool*>(drawingManager.getCurrentTool())) {
-                            largeTileTool->setLargeTileId(currentLargeTileId);
-                        }
+                        // setLargeTileId() の呼び出しは不要
+                        // ツールは自動的にlargeTileManager.getCurrentLargeTile()を参照
 
-                        /*
                         // 選択後はオーバーレイを非表示（オプション）
                         largeTilePaletteOverlay.setVisible(false);
-
-                        */
                         continue;  // 他のクリック処理をスキップ
                     }
                 }
@@ -990,8 +989,8 @@ int main() {
             // 回転の視覚的ガイド
             drawRotationGuide(window, font, largeTileManager.getCurrentRotationDegrees());
 
-           /*
             // 大型タイルの構成タイル番号を表示
+           /*
             const LargeTile& currentLargeTile = largeTileManager.getLargeTile(currentLargeTileId);
             auto arrangement = currentLargeTile.getArrangement();
             std::string compositionInfo = "Tiles: [" +

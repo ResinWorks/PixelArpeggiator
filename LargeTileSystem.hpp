@@ -8,6 +8,8 @@
 #include <cmath>
 #include "DrawingTools.hpp"
 
+//#include "LargeTileManager.hpp"
+
 /**
  * 回転角度の列挙型
  */
@@ -210,31 +212,39 @@ public:
 
 private:
     /**
-     * 2x2配置のインデックス回転
+     * 2x2配置のインデックス回転（修正版）
      * 配列順序: [0]=左上, [1]=右上, [2]=左下, [3]=右下
+     *
+     * 視覚的な回転を実現するため、位置ベースで回転を計算
      */
     std::vector<int> rotate2x2Indices(const std::vector<int>& original, RotationAngle angle) const {
         if (original.size() != 4) return original;
 
         switch (angle) {
         case RotationAngle::ROTATE_90:
-            // 時計回り90度: 左上→右上, 右上→右下, 右下→左下, 左下→左上
+            // 時計回り90度: 各タイルが時計回りに移動
+            // 左上→右上, 右上→右下, 右下→左下, 左下→左上
             return { original[2], original[0], original[3], original[1] };
+
         case RotationAngle::ROTATE_180:
-            // 180度: 左上↔右下, 右上↔左下
+            // 180度: 対角線で入れ替え
+            // 左上↔右下, 右上↔左下
             return { original[3], original[2], original[1], original[0] };
+
         case RotationAngle::ROTATE_270:
             // 反時計回り90度（時計回り270度）
+            // 左上→左下, 右上→左上, 右下→右上, 左下→右下
             return { original[1], original[3], original[0], original[2] };
+
         default:
             return original;
         }
     }
 
     /**
-     * 4x2配置のインデックス回転
-     * 配列順序: [0][1][2][3]
-     *          [4][5][6][7]
+     * 4x2配置のインデックス回転（修正版）
+     * 元の配列順序: [0][1][2][3]
+     *              [4][5][6][7]
      */
     std::vector<int> rotate4x2Indices(const std::vector<int>& original, RotationAngle angle) const {
         if (original.size() != 8) return original;
@@ -242,59 +252,83 @@ private:
         switch (angle) {
         case RotationAngle::ROTATE_90:
             // 4x2 → 2x4 （時計回り90度）
-            return { original[4], original[0], original[5], original[1],
-                    original[6], original[2], original[7], original[3] };
+            // 新しい配列: [0][1]
+            //            [2][3]
+            //            [4][5]
+            //            [6][7]
+            // 元の位置から新しい位置へのマッピング
+            return {
+                original[6], original[4],  // 新しい1行目：元の左下列を逆順
+                original[7], original[5],  // 新しい2行目：元の右下列を逆順
+                original[2], original[0],  // 新しい3行目：元の左上列を逆順  
+                original[3], original[1]   // 新しい4行目：元の右上列を逆順
+            };
+
         case RotationAngle::ROTATE_180:
             // 4x2 → 4x2 （180度反転）
-            return { original[7], original[6], original[5], original[4],
-                    original[3], original[2], original[1], original[0] };
+            // 全体を反転
+            return {
+                original[7], original[6], original[5], original[4],
+                original[3], original[2], original[1], original[0]
+            };
+
         case RotationAngle::ROTATE_270:
             // 4x2 → 2x4 （反時計回り90度）
-            return { original[3], original[7], original[2], original[6],
-                    original[1], original[5], original[0], original[4] };
+            // 90度回転の逆
+            return {
+                original[1], original[3],  // 新しい1行目：元の右上列
+                original[0], original[2],  // 新しい2行目：元の左上列
+                original[5], original[7],  // 新しい3行目：元の右下列
+                original[4], original[6]   // 新しい4行目：元の左下列
+            };
+
         default:
             return original;
         }
     }
 
     /**
-     * 2x2の描画位置を回転に応じて計算
-     */
+      * 2x2の描画位置を回転に応じて計算（修正版）
+      * より直感的な回転位置計算
+      */
     std::vector<sf::Vector2i> getRotated2x2Positions(const sf::Vector2i& basePos, int tileSize, RotationAngle angle) const {
         std::vector<sf::Vector2i> positions;
 
+        // 基本位置（0度）
+        std::vector<sf::Vector2i> basePositions = {
+            basePos,                                          // [0] 左上
+            sf::Vector2i(basePos.x + tileSize, basePos.y),   // [1] 右上
+            sf::Vector2i(basePos.x, basePos.y + tileSize),   // [2] 左下
+            sf::Vector2i(basePos.x + tileSize, basePos.y + tileSize) // [3] 右下
+        };
+
+        // 回転に応じて位置を並び替え（インデックスの回転と同じロジック）
         switch (angle) {
         case RotationAngle::ROTATE_0:
-            positions = {
-                basePos,                                      // 左上
-                sf::Vector2i(basePos.x + tileSize, basePos.y),     // 右上
-                sf::Vector2i(basePos.x, basePos.y + tileSize),     // 左下
-                sf::Vector2i(basePos.x + tileSize, basePos.y + tileSize) // 右下
-            };
+            positions = basePositions;
             break;
         case RotationAngle::ROTATE_90:
-            // 90度回転: 2x2のまま、配置順序を変更
             positions = {
-                sf::Vector2i(basePos.x, basePos.y + tileSize),     // 左下→左上
-                basePos,                                      // 左上→右上
-                sf::Vector2i(basePos.x + tileSize, basePos.y + tileSize), // 右下→左下
-                sf::Vector2i(basePos.x + tileSize, basePos.y)      // 右上→右下
+                basePositions[2], // [0]の位置に[2]が来る
+                basePositions[0], // [1]の位置に[0]が来る  
+                basePositions[3], // [2]の位置に[3]が来る
+                basePositions[1]  // [3]の位置に[1]が来る
             };
             break;
         case RotationAngle::ROTATE_180:
             positions = {
-                sf::Vector2i(basePos.x + tileSize, basePos.y + tileSize), // 右下
-                sf::Vector2i(basePos.x, basePos.y + tileSize),     // 左下
-                sf::Vector2i(basePos.x + tileSize, basePos.y),     // 右上
-                basePos                                       // 左上
+                basePositions[3], // [0]の位置に[3]が来る
+                basePositions[2], // [1]の位置に[2]が来る
+                basePositions[1], // [2]の位置に[1]が来る
+                basePositions[0]  // [3]の位置に[0]が来る
             };
             break;
         case RotationAngle::ROTATE_270:
             positions = {
-                sf::Vector2i(basePos.x + tileSize, basePos.y),     // 右上→左上
-                sf::Vector2i(basePos.x + tileSize, basePos.y + tileSize), // 右下→右上
-                basePos,                                      // 左上→左下
-                sf::Vector2i(basePos.x, basePos.y + tileSize)      // 左下→右下
+                basePositions[1], // [0]の位置に[1]が来る
+                basePositions[3], // [1]の位置に[3]が来る
+                basePositions[0], // [2]の位置に[0]が来る
+                basePositions[2]  // [3]の位置に[2]が来る
             };
             break;
         }
@@ -303,8 +337,8 @@ private:
     }
 
     /**
-     * 4x2の描画位置を回転に応じて計算
-     */
+    * 4x2の描画位置を回転に応じて計算（修正版）
+    */
     std::vector<sf::Vector2i> getRotated4x2Positions(const sf::Vector2i& basePos, int tileSize, RotationAngle angle) const {
         std::vector<sf::Vector2i> positions;
 
@@ -320,8 +354,10 @@ private:
                 }
             }
             break;
+
         case RotationAngle::ROTATE_90:
             // 2x4: 90度回転（縦長になる）
+            // 4x2の各列が2x4の各行になる
             for (int row = 0; row < 4; row++) {
                 for (int col = 0; col < 2; col++) {
                     positions.push_back(sf::Vector2i(
@@ -331,10 +367,11 @@ private:
                 }
             }
             break;
+
         case RotationAngle::ROTATE_180:
-            // 4x2: 180度回転（右下から左上へ）
-            for (int row = 1; row >= 0; row--) {
-                for (int col = 3; col >= 0; col--) {
+            // 4x2: 180度回転（位置は同じ、配置が逆順）
+            for (int row = 0; row < 2; row++) {
+                for (int col = 0; col < 4; col++) {
                     positions.push_back(sf::Vector2i(
                         basePos.x + col * tileSize,
                         basePos.y + row * tileSize
@@ -342,10 +379,11 @@ private:
                 }
             }
             break;
+
         case RotationAngle::ROTATE_270:
-            // 2x4: 270度回転（縦長、下から上へ）
-            for (int row = 3; row >= 0; row--) {
-                for (int col = 1; col >= 0; col--) {
+            // 2x4: 270度回転（縦長）
+            for (int row = 0; row < 4; row++) {
+                for (int col = 0; col < 2; col++) {
                     positions.push_back(sf::Vector2i(
                         basePos.x + col * tileSize,
                         basePos.y + row * tileSize

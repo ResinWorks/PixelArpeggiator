@@ -1,4 +1,4 @@
-//===== LargeTileSystem.cpp 完全版（回転機能対応） =====
+//===== LargeTileSystem.cpp 現状対応版（回転機能対応） =====
 #include "LargeTileSystem.hpp"
 #include "Canvas.hpp"
 #include "CanvasView.hpp"
@@ -14,7 +14,6 @@ LargeTileManager largeTileManager;
 
 /**
  * 大型タイルツール：描画開始
- * クリック位置に即座に大型タイルを配置
  */
 void LargeTileTool::onDrawStart(const sf::Vector2i& startPos,
     Canvas& canvas,
@@ -78,16 +77,17 @@ void LargeTileTool::drawPreview(sf::RenderWindow& window,
     const CanvasView& view,
     int brushSize) const
 {
-    // 現在の大型タイルの回転状態を取得
+    // ===== 修正：グローバル管理者から現在のタイル情報を取得 =====
     const LargeTile& currentTile = largeTileManager.getCurrentLargeTile();
+    int actualLargeTileId = largeTileManager.getCurrentSelection();
     RotationAngle rotation = currentTile.getCurrentRotation();
 
     int estimatedTileSize = 6; // 暫定値
     sf::Vector2i snappedPos = snapPosition(currentPos, view, estimatedTileSize, brushSize, estimatedTileSize);
 
-    // 回転を考慮したサイズ計算
+    // 回転を考慮したサイズ計算（修正：actualLargeTileIdを使用）
     int baseWidth, baseHeight;
-    if (currentLargeTileId >= 8 && currentLargeTileId <= 11) {
+    if (actualLargeTileId >= 8 && actualLargeTileId <= 11) {
         // 4x2タイル
         if (rotation == RotationAngle::ROTATE_90 || rotation == RotationAngle::ROTATE_270) {
             baseWidth = 2; baseHeight = 4; // 90度/270度回転で2x4になる
@@ -136,7 +136,7 @@ void LargeTileTool::drawPreview(sf::RenderWindow& window,
 }
 
 /**
- * カーソル描画（回転対応）
+ * カーソル描画（回転対応・修正版）
  */
 void LargeTileTool::drawCursor(sf::RenderWindow& window,
     const sf::Vector2i& mousePos,
@@ -147,13 +147,14 @@ void LargeTileTool::drawCursor(sf::RenderWindow& window,
     float zoom = view.getZoom();
     float scaledTileSize = tileSize * zoom;
 
-    // 現在の大型タイルの回転状態を取得
+    // ===== 修正：グローバル管理者から現在のタイル情報を取得 =====
     const LargeTile& currentTile = largeTileManager.getCurrentLargeTile();
+    int actualLargeTileId = largeTileManager.getCurrentSelection();
     RotationAngle rotation = currentTile.getCurrentRotation();
 
-    // 基本の大型タイルサイズ（回転を考慮）
+    // 基本の大型タイルサイズ（回転を考慮・修正：actualLargeTileIdを使用）
     int baseWidth, baseHeight;
-    if (currentLargeTileId >= 8 && currentLargeTileId <= 11) {
+    if (actualLargeTileId >= 8 && actualLargeTileId <= 11) {
         // 4x2タイル
         if (rotation == RotationAngle::ROTATE_90 || rotation == RotationAngle::ROTATE_270) {
             baseWidth = 2; baseHeight = 4; // 90度/270度回転で2x4になる
@@ -234,7 +235,7 @@ void LargeTileTool::drawCursor(sf::RenderWindow& window,
 }
 
 /**
- * 位置を大型タイルサイズとブラシサイズに合わせて正確にスナップ
+ * 位置を大型タイルサイズとブラシサイズに合わせて正確にスナップ（修正版）
  */
 sf::Vector2i LargeTileTool::snapPosition(const sf::Vector2i& pos,
     const CanvasView& view,
@@ -242,13 +243,14 @@ sf::Vector2i LargeTileTool::snapPosition(const sf::Vector2i& pos,
     int brushSize,
     int canvasTileSize) const
 {
-    // 現在の大型タイルの回転状態を取得
+    // ===== 修正：グローバル管理者から現在のタイル情報を取得 =====
     const LargeTile& currentTile = largeTileManager.getCurrentLargeTile();
+    int actualLargeTileId = largeTileManager.getCurrentSelection();
     RotationAngle rotation = currentTile.getCurrentRotation();
 
-    // 大型タイルの基本サイズ（回転考慮）
+    // 大型タイルの基本サイズ（回転考慮・修正：actualLargeTileIdを使用）
     int baseWidth, baseHeight;
-    if (currentLargeTileId >= 8 && currentLargeTileId <= 11) {
+    if (actualLargeTileId >= 8 && actualLargeTileId <= 11) {
         // 4x2タイル
         if (rotation == RotationAngle::ROTATE_90 || rotation == RotationAngle::ROTATE_270) {
             baseWidth = 2; baseHeight = 4;
@@ -282,20 +284,21 @@ sf::Vector2i LargeTileTool::snapPosition(const sf::Vector2i& pos,
 }
 
 /**
- * ブラシサイズに応じて大型タイルを複数配置
+ * ブラシサイズに応じて大型タイルを複数配置（修正版）
  */
 void LargeTileTool::placeLargeTiles(const sf::Vector2i& basePos,
     int brushSize,
     Canvas& canvas,
     const CanvasView& view) const
 {
-    // 現在の大型タイルの回転状態を取得
+    // ===== 修正：グローバル管理者から現在のタイル情報を取得 =====
     const LargeTile& currentTile = largeTileManager.getCurrentLargeTile();
+    int actualLargeTileId = largeTileManager.getCurrentSelection();
     RotationAngle rotation = currentTile.getCurrentRotation();
 
-    // 基本の大型タイルサイズ（回転考慮）
+    // 基本の大型タイルサイズ（回転考慮・修正：actualLargeTileIdを使用）
     int baseWidth, baseHeight;
-    if (currentLargeTileId >= 8 && currentLargeTileId <= 11) {
+    if (actualLargeTileId >= 8 && actualLargeTileId <= 11) {
         // 4x2タイル
         if (rotation == RotationAngle::ROTATE_90 || rotation == RotationAngle::ROTATE_270) {
             baseWidth = 2; baseHeight = 4;
@@ -339,13 +342,14 @@ void LargeTileTool::placeLargeTiles(const sf::Vector2i& basePos,
 }
 
 /**
- * 単個の大型タイルを配置
+ * 単個の大型タイルを配置（修正版 - 主要な修正箇所）
  */
 void LargeTileTool::placeLargeTile(const sf::Vector2i& canvasPos,
     Canvas& canvas,
     const CanvasView& view) const
 {
-    // グローバルのLargeTileManagerから現在の大型タイルを取得
+    // ===== 修正：グローバルのLargeTileManagerから現在選択中のタイルを取得 =====
+    // currentLargeTileId は使用せず、常に管理者の最新状態を参照
     const LargeTile& currentTile = largeTileManager.getCurrentLargeTile();
 
     auto arrangement = currentTile.getArrangement(); // 回転が適用された配置を取得
