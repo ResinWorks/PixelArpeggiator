@@ -18,18 +18,22 @@
 #include "LargeTilePaletteOverlay.hpp"
 #include "UIManager.hpp"  // 新しく分離したUIManager
 #include "tinyfiledialogs.h"
-#include <iostream>
-#include <set>
-#include <vector>
-#include <memory>
-#include <algorithm>
-#include <ctime>
-#include <iomanip>
-#include <sstream>
+#include "GlobalColorPalette.hpp"
+
+
+//#include <iostream>
+//#include <set>
+//#include <vector>
+///#include <memory>
+//#include <algorithm>
+//#include <ctime>
+//#include <iomanip>
+//#include <sstream>
+
 
 extern LargeTileManager largeTileManager;
 
-const int WINDOW_WIDTH = 1600;
+const int WINDOW_WIDTH = 1800;
 const int WINDOW_HEIGHT = 900;
 
 /**
@@ -110,7 +114,7 @@ void renderFrame(sf::RenderWindow& window, const sf::Font& font, PatternGrid& pa
     DrawingManager& drawingManager, UIManager& uiManager, const sf::Vector2i& mousePos,
     int selectedColorIndex, int brushSize, bool showGrid, float gridSpacing,
     float gridShrink, const sf::Color& tileGridColor, int currentLargeTileId,
-    LargeTileManager& largeTileManager);
+    LargeTileManager& largeTileManager, GlobalColorPalette& globalColorPalette);
 
 void renderInfoText(sf::RenderWindow& window, const sf::Font& font, CanvasView& canvasView,
     DrawingManager& drawingManager, int currentLargeTileId,
@@ -153,6 +157,9 @@ int main() {
     PatternGrid patternGrid(3, 3, 50);
     ColorPanel colorPanel(font);
     TilePalette tilePalette(50, sf::Vector2f(20, 60));
+
+    GlobalColorPalette globalColorPalette(sf::Vector2f(20, 20), 50);
+
     Canvas canvas(160, 160, 3, sf::Vector2f(360, 20));
     CanvasView canvasView(sf::Vector2f(360, 20), window.getSize());
     DrawingManager drawingManager;
@@ -163,6 +170,7 @@ int main() {
     patternGrid.setPosition(sf::Vector2f(20, 150));
     colorPanel.setPosition(sf::Vector2f(20, 310));
     tilePalette.setPosition(sf::Vector2f(1350, 20));
+    globalColorPalette.setPosition(sf::Vector2f(1600, 20));
 
     // 状態変数
     int selectedColorIndex = 0;
@@ -247,7 +255,7 @@ int main() {
         renderFrame(window, font, patternGrid, tilePalette, colorPanel, canvas, canvasView,
             largeTilePaletteOverlay, drawingManager, uiManager, mousePos,
             selectedColorIndex, brushSize, showGrid, gridSpacing, gridShrink,
-            tileGridColor, currentLargeTileId, largeTileManager);
+            tileGridColor, currentLargeTileId, largeTileManager, globalColorPalette);
     }
 
     return 0;
@@ -570,7 +578,7 @@ void renderFrame(sf::RenderWindow& window, const sf::Font& font, PatternGrid& pa
     DrawingManager& drawingManager, UIManager& uiManager, const sf::Vector2i& mousePos,
     int selectedColorIndex, int brushSize, bool showGrid, float gridSpacing,
     float gridShrink, const sf::Color& tileGridColor, int currentLargeTileId,
-    LargeTileManager& largeTileManager) {
+    LargeTileManager& largeTileManager, GlobalColorPalette& globalColorPalette) {
 
     window.clear(sf::Color(30, 30, 30));
 
@@ -587,6 +595,7 @@ void renderFrame(sf::RenderWindow& window, const sf::Font& font, PatternGrid& pa
     tilePalette.draw(window, tilePalette.getAllColorPalettes());
     colorPanel.draw(window);
     largeTilePaletteOverlay.draw(window);
+    globalColorPalette.draw(window);
 
     // キャンバス描画
     canvas.drawWithView(window, canvasView,

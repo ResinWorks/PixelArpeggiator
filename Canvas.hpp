@@ -121,26 +121,7 @@ public:
 		float spacing = 0.5f,
 		float shrink = 1.0f);
 
-	/**
-	 * キャンバスを指定サイズで画像出力（スケール対応）
-	 * @param filename 出力ファイル名
-	 * @param outputWidth 出力画像の幅
-	 * @param outputHeight 出力画像の高さ
-	 * @param patterns パターンデータ
-	 * @param colorPalettes カラーパレットデータ
-	 * @param showGrid グリッド表示するか
-	 * @param spacing グリッド間隔
-	 * @param shrink タイル縮小率
-	 * @return 保存成功時true
-	 */
-	bool exportToImageScaled(const std::string& filename,
-		int outputWidth,
-		int outputHeight,
-		const std::vector<std::vector<int>>& patterns,
-		const std::vector<std::array<sf::Color, 3>>& colorPalettes,
-		bool showGrid = false,
-		float spacing = 0.5f,
-		float shrink = 1.0f);
+	
 
 	/**
 	 * 現在のキャンバスサイズを取得
@@ -205,6 +186,8 @@ private:
 	* @param shrink タイル縮小率
 	* @param scale スケール倍率（1.0 = 元サイズ）
 	*/
+
+	
 	void renderToOutputTexture(sf::RenderTexture& outputTexture,
 		const std::vector<std::vector<int>>& patterns,
 		const std::vector<std::array<sf::Color, 3>>& colorPalettes,
@@ -212,12 +195,15 @@ private:
 		float spacing,
 		float shrink,
 		float scale = 1.0f);
+	
 
 	/**
    * 更新された描画処理（タイル内部グリッド色対応）
    */
+	/*
 	void renderToTextureWithGridColor(const std::vector<std::vector<int>>& patterns,
 		const std::vector<std::array<sf::Color, 3>>& colorPalettes,
 		bool showGrid, float spacing, float shrink);
+	*/
 
 };

@@ -192,6 +192,7 @@ gdi32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     <ClInclude Include="DrawingManager.hpp" />
     <ClInclude Include="DrawingTools.hpp" />
     <ClInclude Include="EraserTool.hpp" />
+    <ClInclude Include="GlobalColorPalette.hpp" />
     <ClInclude Include="LargeTilePaletteOverlay.hpp" />
     <ClInclude Include="LargeTileSystem.hpp" />
     <ClInclude Include="PatternGrid.hpp" />

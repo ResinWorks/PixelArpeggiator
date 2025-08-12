@@ -279,6 +279,8 @@ void Canvas::eraseTileInView(const CanvasView& view, const sf::Vector2i& screenP
     }
 }
 
+/*
+
 Canvas::PerformanceInfo Canvas::getPerformanceInfo(const CanvasView& view) const {
     PerformanceInfo info;
     info.totalTiles = width * height;
@@ -304,6 +306,7 @@ Canvas::PerformanceInfo Canvas::getPerformanceInfo(const CanvasView& view) const
 
     return info;
 }
+*/
 
 sf::Vector2i Canvas::screenToTileIndex(const CanvasView& view, const sf::Vector2i& screenPos) const {
     sf::Vector2i canvasPos = view.screenToCanvas(screenPos);
@@ -315,7 +318,7 @@ sf::Vector2i Canvas::screenToTileIndex(const CanvasView& view, const sf::Vector2
 
 /**
  * キャンバスを画像ファイルとして出力
- * 現在のキャンバスサイズ（900x900）で出力
+ * 現在のキャンバスサイズで出力
  */
 bool Canvas::exportToImage(const std::string& filename,
     const std::vector<std::vector<int>>& patterns,
@@ -349,54 +352,13 @@ bool Canvas::exportToImage(const std::string& filename,
     }
 }
 
-/**
- * キャンバスを指定サイズで画像出力（スケール対応）
- * 高解像度出力や小さなプレビュー画像の生成に使用
- */
-bool Canvas::exportToImageScaled(const std::string& filename,
-    int outputWidth,
-    int outputHeight,
-    const std::vector<std::vector<int>>& patterns,
-    const std::vector<std::array<sf::Color, 3>>& colorPalettes,
-    bool showGrid,
-    float spacing,
-    float shrink) {
-
-    // 出力用RenderTextureを指定サイズで作成
-    sf::RenderTexture outputTexture;
-    if (!outputTexture.create(outputWidth, outputHeight)) {
-        std::cerr << "Error: Failed to create scaled output texture" << std::endl;
-        return false;
-    }
-
-    // スケール倍率を計算
-    float scaleX = static_cast<float>(outputWidth) / (width * tileSize);
-    float scaleY = static_cast<float>(outputHeight) / (height * tileSize);
-    float scale = std::min(scaleX, scaleY); // アスペクト比を保持
-
-    // スケールされた描画
-    renderToOutputTexture(outputTexture, patterns, colorPalettes, showGrid, spacing, shrink, scale);
-
-    // 画像保存
-    sf::Image outputImage = outputTexture.getTexture().copyToImage();
-
-    if (outputImage.saveToFile(filename)) {
-        std::cout << "Scaled image exported successfully: " << filename << std::endl;
-        std::cout << "Original size: " << width * tileSize << "x" << height * tileSize << " pixels" << std::endl;
-        std::cout << "Output size: " << outputWidth << "x" << outputHeight << " pixels" << std::endl;
-        std::cout << "Scale factor: " << scale << "x" << std::endl;
-        return true;
-    }
-    else {
-        std::cerr << "Error: Failed to save scaled image: " << filename << std::endl;
-        return false;
-    }
-}
 
 /**
  * 画像出力用の内部描画処理
  * 既存のrenderToTexture()を参考に、出力専用の描画を実行
  */
+
+
  // 画像出力用の描画処理も同様に修正
 void Canvas::renderToOutputTexture(sf::RenderTexture& outputTexture,
     const std::vector<std::vector<int>>& patterns,
