@@ -1,3 +1,8 @@
+#pragma once
+
+#include <SFML/Graphics.hpp>
+#include <string>
+
 class Button {
 private:
     sf::RectangleShape shape;
@@ -28,9 +33,9 @@ public:
     }
 
     /**
-    * ボタンの状態を更新
-    * @param mousePos マウス位置
-    */
+     * ボタンの状態を更新
+     * @param mousePos マウス位置
+     */
     void update(const sf::Vector2i& mousePos) {
         sf::FloatRect bounds = shape.getGlobalBounds();
         isHovered = bounds.contains(static_cast<sf::Vector2f>(mousePos));
@@ -80,9 +85,9 @@ public:
     }
 
     /**
-    * ボタンの位置を取得
-    * @return ボタンの左上角の座標
-    */
+     * ボタンの位置を取得
+     * @return ボタンの左上角の座標
+     */
     sf::Vector2f getPosition() const {
         return position;
     }
@@ -123,9 +128,10 @@ public:
         shape.setPosition(position);
         updateTextPosition();
     }
+
     /**
-    * テキストの位置をボタン中央に更新
-    */
+     * テキストの位置をボタン中央に更新
+     */
     void updateTextPosition() {
         sf::FloatRect textBounds = buttonText.getLocalBounds();
         sf::Vector2f textPos(
@@ -134,12 +140,11 @@ public:
         );
         buttonText.setPosition(textPos);
     }
-
-
- 
 };
 
-// 色定義（Button.cpp に追加）
+/*
+// 色定義（Button.cppに追加）
 const sf::Color Button::NORMAL_COLOR = sf::Color(70, 70, 70);
 const sf::Color Button::HOVER_COLOR = sf::Color(90, 90, 90);
 const sf::Color Button::ACTIVE_COLOR = sf::Color(100, 150, 255);
+*/

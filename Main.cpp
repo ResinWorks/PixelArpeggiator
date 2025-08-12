@@ -16,6 +16,7 @@
 #include "DrawingTools.hpp"
 #include "LargeTileSystem.hpp"
 #include "LargeTilePaletteOverlay.hpp"
+#include "UIManager.hpp"  // 新しく分離したUIManager
 #include "tinyfiledialogs.h"
 #include <iostream>
 #include <set>
@@ -73,266 +74,8 @@ public:
 };
 
 /**
- * UIManagerクラス - ボタンとスライダーの管理
+ * UIManagerクラス - 分離済み（UIManager.hpp/cppに移動）
  */
-class UIManager {
-private:
-    std::vector<std::unique_ptr<Button>> buttons;
-    std::vector<sf::RectangleShape> sliders;
-    std::vector<sf::CircleShape> knobs;
-    std::vector<sf::Text> labels;
-
-public:
-    // ボタンインデックス定義
-    enum ButtonIndex {
-        ADD_PATTERN = 0, SAVE_CHANGES = 1, SAVE_FILE = 2, LOAD_FILE = 3,
-        EXPORT_PNG = 4, EXPORT_JPG = 5, TOGGLE_GRID = 6,
-        BRUSH_SMALL = 7, BRUSH_MEDIUM = 8, BRUSH_LARGE = 9,
-        TOOL_BRUSH = 10, TOOL_ERASER = 11, TOOL_LINE = 12,
-        TOOL_CIRCLE = 13, TOOL_ELLIPSE = 14, TOOL_LARGE_TILE = 15,
-        LARGE_TILE_PALETTE_TOGGLE = 16, ROTATE_BUTTON = 17, RESET_VIEW = 18
-    };
-
-    UIManager(const sf::Font& font) {
-        initializeButtons();
-        initializeSliders(font);
-    }
-
-    void initializeButtons() {
-        // パターン操作
-        buttons.emplace_back(std::make_unique<Button>("Add to Palette", sf::Vector2f(20, 450), sf::Vector2f(100, 25)));
-        buttons.emplace_back(std::make_unique<Button>("Save Changes", sf::Vector2f(150, 450), sf::Vector2f(100, 25)));
-
-        // ファイル操作
-        buttons.emplace_back(std::make_unique<Button>("Save to File", sf::Vector2f(20, 600), sf::Vector2f(100, 30)));
-        buttons.emplace_back(std::make_unique<Button>("Load from File", sf::Vector2f(130, 600), sf::Vector2f(100, 30)));
-        buttons.emplace_back(std::make_unique<Button>("Export PNG", sf::Vector2f(240, 600), sf::Vector2f(100, 30)));
-        buttons.emplace_back(std::make_unique<Button>("Export JPG", sf::Vector2f(200, 850), sf::Vector2f(100, 30)));
-
-        // 表示設定
-        buttons.emplace_back(std::make_unique<Button>("Toggle Grid", sf::Vector2f(20, 640), sf::Vector2f(120, 30)));
-
-        // ブラシサイズ
-        buttons.emplace_back(std::make_unique<Button>("1x1", sf::Vector2f(20, 690), sf::Vector2f(50, 30)));
-        buttons.emplace_back(std::make_unique<Button>("3x3", sf::Vector2f(80, 690), sf::Vector2f(50, 30)));
-        buttons.emplace_back(std::make_unique<Button>("5x5", sf::Vector2f(140, 690), sf::Vector2f(50, 30)));
-
-        // ツール選択
-        buttons.emplace_back(std::make_unique<Button>("Brush", sf::Vector2f(20, 730), sf::Vector2f(60, 30)));
-        buttons.emplace_back(std::make_unique<Button>("Eraser", sf::Vector2f(80, 730), sf::Vector2f(60, 30)));
-        buttons.emplace_back(std::make_unique<Button>("Line", sf::Vector2f(140, 730), sf::Vector2f(60, 30)));
-        buttons.emplace_back(std::make_unique<Button>("Circle", sf::Vector2f(200, 730), sf::Vector2f(60, 30)));
-        buttons.emplace_back(std::make_unique<Button>("Ellipse", sf::Vector2f(260, 730), sf::Vector2f(60, 30)));
-        buttons.emplace_back(std::make_unique<Button>("Large", sf::Vector2f(200, 690), sf::Vector2f(60, 30)));
-
-        // 大型タイル関連
-        buttons.emplace_back(std::make_unique<Button>("L-Palette", sf::Vector2f(250, 690), sf::Vector2f(80, 30)));
-        buttons.emplace_back(std::make_unique<Button>("Rotate", sf::Vector2f(330, 690), sf::Vector2f(70, 30)));
-
-        // ビュー操作
-        buttons.emplace_back(std::make_unique<Button>("Reset View", sf::Vector2f(20, 770), sf::Vector2f(100, 30)));
-    }
-
-    void initializeSliders(const sf::Font& font) {
-        // グリッド調整スライダー
-        sliders.emplace_back(sf::Vector2f(120, 10));
-        sliders.emplace_back(sf::Vector2f(120, 10));
-        sliders[0].setPosition(70, 550);
-        sliders[1].setPosition(70, 580);
-        sliders[0].setFillColor(sf::Color(80, 80, 80));
-        sliders[1].setFillColor(sf::Color(80, 80, 80));
-
-        // タイル内部グリッド色スライダー（RGB）
-        for (int i = 0; i < 3; ++i) {
-            sliders.emplace_back(sf::Vector2f(100, 8));
-            sliders[2 + i].setPosition(240, 550 + i * 20);
-        }
-        sliders[2].setFillColor(sf::Color(100, 50, 50));
-        sliders[3].setFillColor(sf::Color(50, 100, 50));
-        sliders[4].setFillColor(sf::Color(50, 50, 100));
-
-        // ノブ初期化
-        for (int i = 0; i < 5; ++i) {
-            knobs.emplace_back(i < 2 ? 5 : 4);
-            knobs[i].setFillColor(i < 2 ? sf::Color::White :
-                (i == 2 ? sf::Color::Red : (i == 3 ? sf::Color::Green : sf::Color::Blue)));
-        }
-
-        // ラベル初期化
-        labels.emplace_back("Spacing", font, 14);
-        labels.emplace_back("Shrink", font, 14);
-        labels.emplace_back("Tile Grid Color", font, 12);
-        labels.emplace_back("R", font, 11);
-        labels.emplace_back("G", font, 11);
-        labels.emplace_back("B", font, 11);
-
-        labels[0].setPosition(20, 545);
-        labels[1].setPosition(20, 575);
-        labels[2].setPosition(220, 530);
-        labels[3].setPosition(220, 547);
-        labels[4].setPosition(220, 567);
-        labels[5].setPosition(220, 587);
-    }
-
-    Button& getButton(ButtonIndex index) {
-        return *buttons[index];
-    }
-
-    void updateButtons(const sf::Vector2i& mousePos) {
-        for (auto& button : buttons) {
-            button->update(mousePos);
-        }
-    }
-
-    void drawButtons(sf::RenderWindow& window, const sf::Font& font, ToolManager::ToolType activeToolType,
-        int currentBrushSize, bool largeTilePaletteVisible = false, int rotationDegrees = 0) {
-        for (size_t i = 0; i < buttons.size(); ++i) {
-            bool isActive = isButtonActive(i, activeToolType, currentBrushSize, largeTilePaletteVisible, rotationDegrees);
-
-            if (isActive) {
-                buttons[i]->setActiveState(true);
-            }
-
-            buttons[i]->draw(window, font);
-
-            if (i == ROTATE_BUTTON) {
-                drawRotationIndicator(window, font, buttons[i]->getPosition(), rotationDegrees);
-            }
-
-            if (isActive) {
-                buttons[i]->setActiveState(false);
-            }
-        }
-    }
-
-    void updateSliders(const sf::Vector2i& mousePos, bool mousePressed,
-        float& gridSpacing, float& gridShrink, sf::Color& tileGridColor) {
-        // グリッドスライダー
-        updateSlider(0, mousePos, mousePressed, gridSpacing);
-        updateSlider(1, mousePos, mousePressed, gridShrink);
-
-        // RGBスライダー
-        updateColorSlider(2, mousePos, mousePressed, tileGridColor.r);
-        updateColorSlider(3, mousePos, mousePressed, tileGridColor.g);
-        updateColorSlider(4, mousePos, mousePressed, tileGridColor.b);
-    }
-
-    void drawSliders(sf::RenderWindow& window, float gridSpacing, float gridShrink, const sf::Color& tileGridColor) {
-        // ラベル描画
-        for (auto& label : labels) {
-            window.draw(label);
-        }
-
-        // スライダー描画
-        for (auto& slider : sliders) {
-            window.draw(slider);
-        }
-
-        // ノブ位置更新・描画
-        updateKnobPositions(gridSpacing, gridShrink, tileGridColor);
-        for (auto& knob : knobs) {
-            window.draw(knob);
-        }
-
-        // 色プレビュー
-        drawColorPreview(window, tileGridColor);
-    }
-
-private:
-    bool isButtonActive(size_t i, ToolManager::ToolType activeToolType, int currentBrushSize,
-        bool largeTilePaletteVisible, int rotationDegrees) {
-        // ツールボタンのアクティブ状態
-        if (i == TOOL_BRUSH && activeToolType == ToolManager::ToolType::BRUSH) return true;
-        if (i == TOOL_ERASER && activeToolType == ToolManager::ToolType::ERASER) return true;
-        if (i == TOOL_LINE && activeToolType == ToolManager::ToolType::LINE) return true;
-        if (i == TOOL_CIRCLE && activeToolType == ToolManager::ToolType::CIRCLE) return true;
-        if (i == TOOL_ELLIPSE && activeToolType == ToolManager::ToolType::ELLIPSE) return true;
-        if (i == TOOL_LARGE_TILE && activeToolType == ToolManager::ToolType::LARGE_TILE) return true;
-
-        // ブラシサイズボタンのアクティブ状態
-        if (i == BRUSH_SMALL && currentBrushSize == 1) return true;
-        if (i == BRUSH_MEDIUM && currentBrushSize == 3) return true;
-        if (i == BRUSH_LARGE && currentBrushSize == 5) return true;
-
-        // その他のアクティブ状態
-        if (i == LARGE_TILE_PALETTE_TOGGLE && largeTilePaletteVisible) return true;
-        if (i == ROTATE_BUTTON && rotationDegrees != 0) return true;
-
-        return false;
-    }
-
-    void updateSlider(int index, const sf::Vector2i& mousePos, bool mousePressed, float& value) {
-        sf::FloatRect bounds = sliders[index].getGlobalBounds();
-        if (mousePressed && bounds.contains(static_cast<sf::Vector2f>(mousePos))) {
-            float ratio = (mousePos.x - bounds.left) / bounds.width;
-            value = std::clamp(ratio, 0.0f, 1.0f);
-        }
-    }
-
-    void updateColorSlider(int index, const sf::Vector2i& mousePos, bool mousePressed, sf::Uint8& colorComponent) {
-        sf::FloatRect bounds = sliders[index].getGlobalBounds();
-        if (mousePressed && bounds.contains(static_cast<sf::Vector2f>(mousePos))) {
-            float ratio = (mousePos.x - bounds.left) / bounds.width;
-            colorComponent = static_cast<sf::Uint8>(ratio * 255);
-        }
-    }
-
-    void updateKnobPositions(float gridSpacing, float gridShrink, const sf::Color& tileGridColor) {
-        // グリッドノブ
-        knobs[0].setPosition(sliders[0].getPosition().x + sliders[0].getSize().x * gridSpacing - 5,
-            sliders[0].getPosition().y - 3);
-        knobs[1].setPosition(sliders[1].getPosition().x + sliders[1].getSize().x * gridShrink - 5,
-            sliders[1].getPosition().y - 3);
-
-        // RGBノブ
-        float ratios[] = { tileGridColor.r / 255.0f, tileGridColor.g / 255.0f, tileGridColor.b / 255.0f };
-        for (int i = 0; i < 3; ++i) {
-            knobs[2 + i].setPosition(sliders[2 + i].getPosition().x + sliders[2 + i].getSize().x * ratios[i] - 4,
-                sliders[2 + i].getPosition().y - 2);
-        }
-    }
-
-    void drawColorPreview(sf::RenderWindow& window, const sf::Color& tileGridColor) {
-        sf::RectangleShape colorPreview(sf::Vector2f(30, 10));
-        colorPreview.setPosition(310, 530);
-        colorPreview.setFillColor(tileGridColor);
-        colorPreview.setOutlineThickness(1);
-        colorPreview.setOutlineColor(sf::Color::White);
-        window.draw(colorPreview);
-    }
-
-    void drawRotationIndicator(sf::RenderWindow& window, const sf::Font& font,
-        const sf::Vector2f& buttonPos, int rotationDegrees) {
-        if (rotationDegrees == 0) return;
-
-        sf::Text rotationText(std::to_string(rotationDegrees) + "°", font, 10);
-        rotationText.setPosition(buttonPos.x + 75, buttonPos.y + 20);
-        rotationText.setFillColor(sf::Color::Yellow);
-        window.draw(rotationText);
-
-        drawRotationArrow(window, buttonPos, rotationDegrees);
-    }
-
-    void drawRotationArrow(sf::RenderWindow& window, const sf::Vector2f& buttonPos, int rotationDegrees) {
-        sf::Vector2f center(buttonPos.x + 35, buttonPos.y + 15);
-        float radius = 8.0f;
-        float angleRad = rotationDegrees * M_PI / 180.0f;
-
-        sf::Vector2f start(center.x + radius * cos(angleRad), center.y + radius * sin(angleRad));
-        sf::Vector2f end(center.x + (radius - 3) * cos(angleRad + M_PI), center.y + (radius - 3) * sin(angleRad + M_PI));
-
-        sf::VertexArray arrow(sf::Lines);
-        arrow.append(sf::Vertex(start, sf::Color::Cyan));
-        arrow.append(sf::Vertex(end, sf::Color::Cyan));
-        window.draw(arrow);
-
-        sf::CircleShape arrowHead(2.0f);
-        arrowHead.setOrigin(2.0f, 2.0f);
-        arrowHead.setPosition(start);
-        arrowHead.setFillColor(sf::Color::Cyan);
-        window.draw(arrowHead);
-    }
-};
 
 // ===== 関数宣言 =====
 void handleButtonClicks(const sf::Vector2i& clickPos, UIManager& uiManager,
@@ -379,6 +122,14 @@ void renderToolSpecificInfo(sf::RenderWindow& window, const sf::Font& font,
     int currentLargeTileId);
 
 // ユーティリティ関数
+void drawText(sf::RenderWindow& window, const sf::Font& font, const std::string& text,
+    int fontSize, const sf::Vector2f& position, const sf::Color& color) {
+    sf::Text sfText(text, font, fontSize);
+    sfText.setPosition(position);
+    sfText.setFillColor(color);
+    window.draw(sfText);
+}
+
 void drawRotationGuide(sf::RenderWindow& window, const sf::Font& font, int rotationDegrees) {
     if (rotationDegrees == 0) return;
 
@@ -461,25 +212,25 @@ int main() {
                     drawingManager.startDrawing(clickPos, canvas, canvasView,
                         tilePalette.getSelectedIndex(), brushSize);
                 }
-
-                // パン開始
-                if (event.mouseButton.button == sf::Mouse::Middle) {
-                    isPanning = true;
-                    lastPanPos = mousePos;
-                }
             }
 
             // マウスリリース処理
             if (event.type == sf::Event::MouseButtonReleased) {
-                if (event.mouseButton.button == sf::Mouse::Middle) {
-                    isPanning = false;
-                }
-
                 if (event.mouseButton.button == sf::Mouse::Left && drawingManager.getIsDrawing()) {
                     sf::Vector2i releasePos(event.mouseButton.x, event.mouseButton.y);
                     drawingManager.stopDrawing(releasePos, canvas, canvasView,
                         tilePalette.getSelectedIndex(), brushSize);
                 }
+            }
+
+            // 中ボタンパン処理
+            if (event.type == sf::Event::MouseButtonPressed && event.mouseButton.button == sf::Mouse::Middle) {
+                isPanning = true;
+                lastPanPos = sf::Vector2i(event.mouseButton.x, event.mouseButton.y);
+            }
+
+            if (event.type == sf::Event::MouseButtonReleased && event.mouseButton.button == sf::Mouse::Middle) {
+                isPanning = false;
             }
 
             // キーボードショートカット
@@ -515,12 +266,12 @@ void handleButtonClicks(const sf::Vector2i& clickPos, UIManager& uiManager,
     Canvas& canvas, CanvasView& canvasView) {
 
     // 回転ボタン
-    if (uiManager.getButton(UIManager::ROTATE_BUTTON).isClicked(clickPos, true)) {
+    if (uiManager.getButton(ButtonIndex::ROTATE_BUTTON).isClicked(clickPos, true)) {
         largeTileManager.rotateCurrentTile();
     }
 
     // 大型タイルパレット表示切り替え
-    if (uiManager.getButton(UIManager::LARGE_TILE_PALETTE_TOGGLE).isClicked(clickPos, true)) {
+    if (uiManager.getButton(ButtonIndex::LARGE_TILE_PALETTE_TOGGLE).isClicked(clickPos, true)) {
         largeTilePaletteOverlay.setVisible(!largeTilePaletteOverlay.getVisible());
     }
 
@@ -537,27 +288,27 @@ void handleButtonClicks(const sf::Vector2i& clickPos, UIManager& uiManager,
     }
 
     // ツール切り替えボタン
-    if (uiManager.getButton(UIManager::TOOL_BRUSH).isClicked(clickPos, true)) {
+    if (uiManager.getButton(ButtonIndex::TOOL_BRUSH).isClicked(clickPos, true)) {
         drawingManager.setTool(ToolManager::ToolType::BRUSH);
         largeTilePaletteOverlay.setVisible(false);
     }
-    if (uiManager.getButton(UIManager::TOOL_ERASER).isClicked(clickPos, true)) {
+    if (uiManager.getButton(ButtonIndex::TOOL_ERASER).isClicked(clickPos, true)) {
         drawingManager.setTool(ToolManager::ToolType::ERASER);
         largeTilePaletteOverlay.setVisible(false);
     }
-    if (uiManager.getButton(UIManager::TOOL_LINE).isClicked(clickPos, true)) {
+    if (uiManager.getButton(ButtonIndex::TOOL_LINE).isClicked(clickPos, true)) {
         drawingManager.setTool(ToolManager::ToolType::LINE);
         largeTilePaletteOverlay.setVisible(false);
     }
-    if (uiManager.getButton(UIManager::TOOL_CIRCLE).isClicked(clickPos, true)) {
+    if (uiManager.getButton(ButtonIndex::TOOL_CIRCLE).isClicked(clickPos, true)) {
         drawingManager.setTool(ToolManager::ToolType::CIRCLE);
         largeTilePaletteOverlay.setVisible(false);
     }
-    if (uiManager.getButton(UIManager::TOOL_ELLIPSE).isClicked(clickPos, true)) {
+    if (uiManager.getButton(ButtonIndex::TOOL_ELLIPSE).isClicked(clickPos, true)) {
         drawingManager.setTool(ToolManager::ToolType::ELLIPSE);
         largeTilePaletteOverlay.setVisible(false);
     }
-    if (uiManager.getButton(UIManager::TOOL_LARGE_TILE).isClicked(clickPos, true)) {
+    if (uiManager.getButton(ButtonIndex::TOOL_LARGE_TILE).isClicked(clickPos, true)) {
         drawingManager.setTool(ToolManager::ToolType::LARGE_TILE);
         if (auto* largeTileTool = dynamic_cast<LargeTileTool*>(drawingManager.getCurrentTool())) {
             largeTileTool->setLargeTileId(currentLargeTileId);
@@ -565,26 +316,26 @@ void handleButtonClicks(const sf::Vector2i& clickPos, UIManager& uiManager,
     }
 
     // ビュー操作
-    if (uiManager.getButton(UIManager::RESET_VIEW).isClicked(clickPos, true)) {
+    if (uiManager.getButton(ButtonIndex::RESET_VIEW).isClicked(clickPos, true)) {
         canvasView.reset();
     }
 
     // ブラシサイズ
-    if (uiManager.getButton(UIManager::BRUSH_SMALL).isClicked(clickPos, true)) brushSize = 1;
-    if (uiManager.getButton(UIManager::BRUSH_MEDIUM).isClicked(clickPos, true)) brushSize = 3;
-    if (uiManager.getButton(UIManager::BRUSH_LARGE).isClicked(clickPos, true)) brushSize = 5;
+    if (uiManager.getButton(ButtonIndex::BRUSH_SMALL).isClicked(clickPos, true)) brushSize = 1;
+    if (uiManager.getButton(ButtonIndex::BRUSH_MEDIUM).isClicked(clickPos, true)) brushSize = 3;
+    if (uiManager.getButton(ButtonIndex::BRUSH_LARGE).isClicked(clickPos, true)) brushSize = 5;
 
     // 表示設定
-    if (uiManager.getButton(UIManager::TOGGLE_GRID).isClicked(clickPos, true)) {
+    if (uiManager.getButton(ButtonIndex::TOGGLE_GRID).isClicked(clickPos, true)) {
         showGrid = !showGrid;
     }
 
     // パターン操作
-    if (uiManager.getButton(UIManager::ADD_PATTERN).isClicked(clickPos, true)) {
+    if (uiManager.getButton(ButtonIndex::ADD_PATTERN).isClicked(clickPos, true)) {
         tilePalette.addPattern(patternGrid.getTiles(), colorPanel.getColorSet());
     }
 
-    if (uiManager.getButton(UIManager::SAVE_CHANGES).isClicked(clickPos, true) &&
+    if (uiManager.getButton(ButtonIndex::SAVE_CHANGES).isClicked(clickPos, true) &&
         tilePalette.getSelectedIndex() >= 0) {
         tilePalette.updatePattern(tilePalette.getSelectedIndex(), patternGrid.getTiles());
         tilePalette.updateColorSet(tilePalette.getSelectedIndex(), colorPanel.getColorSet());
@@ -618,7 +369,7 @@ void handleFileOperations(const sf::Vector2i& clickPos, UIManager& uiManager,
     ColorPanel& colorPanel, Canvas& canvas) {
 
     // プロジェクト保存
-    if (uiManager.getButton(UIManager::SAVE_FILE).isClicked(clickPos, true)) {
+    if (uiManager.getButton(ButtonIndex::SAVE_FILE).isClicked(clickPos, true)) {
         const char* savePath = tinyfd_saveFileDialog("Save Project", "project.dat", 0, nullptr, nullptr);
         if (savePath) {
             saveProject(savePath, tilePalette.getAllPatterns(),
@@ -627,7 +378,7 @@ void handleFileOperations(const sf::Vector2i& clickPos, UIManager& uiManager,
     }
 
     // プロジェクト読み込み
-    if (uiManager.getButton(UIManager::LOAD_FILE).isClicked(clickPos, true)) {
+    if (uiManager.getButton(ButtonIndex::LOAD_FILE).isClicked(clickPos, true)) {
         const char* loadPath = tinyfd_openFileDialog("Open Project", "", 0, nullptr, nullptr, 0);
         if (loadPath) {
             std::vector<std::vector<int>> patterns;
@@ -651,12 +402,12 @@ void handleFileOperations(const sf::Vector2i& clickPos, UIManager& uiManager,
     }
 
     // PNG出力
-    if (uiManager.getButton(UIManager::EXPORT_PNG).isClicked(clickPos, true)) {
+    if (uiManager.getButton(ButtonIndex::EXPORT_PNG).isClicked(clickPos, true)) {
         exportImage(tilePalette, canvas, "png");
     }
 
     // JPG出力
-    if (uiManager.getButton(UIManager::EXPORT_JPG).isClicked(clickPos, true)) {
+    if (uiManager.getButton(ButtonIndex::EXPORT_JPG).isClicked(clickPos, true)) {
         exportImage(tilePalette, canvas, "jpg");
     }
 }
@@ -685,15 +436,12 @@ void exportImage(TilePalette& tilePalette, Canvas& canvas, const std::string& fo
             }
         }
 
-        // 注意：gridSpacingとgridShrinkの値を適切に渡す必要がある
-        // 現在はデフォルト値を使用しているが、実際の値を渡すべき
         bool success = canvas.exportToImage(
             savePath,
             tilePalette.getAllPatterns(),
             tilePalette.getAllColorPalettes(),
-            // format == "png", // PNGのみグリッド表示
-            false,
-            0.0f, 1.0f // TODO: 実際のgridSpacing, gridShrink値を渡す
+            false, // グリッド線は出力しない
+            0.0f, 1.0f
         );
 
         const char* message = success ?
