@@ -1,113 +1,316 @@
-//===== LargeTileSystem.hpp ‘åŒ^ƒ^ƒCƒ‹ƒVƒXƒeƒ€ =====
+ï»¿//===== LargeTileSystem.hpp å®Œå…¨ç‰ˆï¼ˆå›è»¢æ©Ÿèƒ½å¯¾å¿œï¼‰ =====
 #pragma once
 #include <SFML/Graphics.hpp>
 #include <vector>
 #include <array>
 #include <string>
 #include <iostream>
+#include <cmath>
 #include "DrawingTools.hpp"
 
 /**
- * ‘åŒ^ƒ^ƒCƒ‹î•ñ‚ğŠÇ—‚·‚éƒNƒ‰ƒX
- * 2x2‚Ü‚½‚Í4x2‚Ìƒ^ƒCƒ‹”z’u‚ğƒTƒ|[ƒg
+ * å›è»¢è§’åº¦ã®åˆ—æŒ™å‹
  */
-class LargeTile {
-public:
-    // ƒ^ƒCƒ‹”z’uƒ^ƒCƒv
-    enum class ArrangementType {
-        TILE_2x2,  // 2x2”z’u (4ƒ^ƒCƒ‹)
-        TILE_4x2   // 4x2”z’u (8ƒ^ƒCƒ‹)
-    };
+enum class RotationAngle {
+    ROTATE_0 = 0,   // 0åº¦ï¼ˆãƒ‡ãƒ•ã‚©ãƒ«ãƒˆï¼‰
+    ROTATE_90 = 90,  // 90åº¦æ™‚è¨ˆå›ã‚Š
+    ROTATE_180 = 180, // 180åº¦
+    ROTATE_270 = 270  // 270åº¦æ™‚è¨ˆå›ã‚Š
+};
 
-    // ƒ^ƒCƒ‹”z’uî•ñ
-    struct TileArrangement {
-        ArrangementType type;
-        std::vector<int> indices;  // ƒ^ƒCƒ‹ƒCƒ“ƒfƒbƒNƒX”z—ñ
-    };
-
+/**
+ * å¤§å‹ã‚¿ã‚¤ãƒ«å›è»¢ç®¡ç†ã‚¯ãƒ©ã‚¹
+ */
+class LargeTileRotation {
 private:
-    int largeTileId;              // ‘åŒ^ƒ^ƒCƒ‹”Ô†i0-11j
-    TileArrangement arrangement;  // ƒ^ƒCƒ‹”z’uî•ñ
-
-    /**
-    * **C³”Å**FˆÊ’u‚ğ‘åŒ^ƒ^ƒCƒ‹ƒTƒCƒY‚Æƒuƒ‰ƒVƒTƒCƒY‚ÉƒXƒiƒbƒv
-    * @param pos Œ³‚ÌˆÊ’u
-    * @param view CanvasViewƒCƒ“ƒXƒ^ƒ“ƒX
-    * @param screenTileSize ƒXƒNƒŠ[ƒ“ã‚Ìƒ^ƒCƒ‹ƒTƒCƒY
-    * @param brushSize ƒuƒ‰ƒVƒTƒCƒY
-    * @param canvasTileSize ƒLƒƒƒ“ƒoƒX‚ÌÀÛ‚Ìƒ^ƒCƒ‹ƒTƒCƒY
-    */
-   
-
+    RotationAngle currentRotation = RotationAngle::ROTATE_0;
 
 public:
-    LargeTile(int id) : largeTileId(id) {
-        calculateArrangement();
+    /**
+     * æ¬¡ã®å›è»¢è§’åº¦ã«é€²ã‚€ï¼ˆ90åº¦ãšã¤å¾ªç’°ï¼‰
+     */
+    void rotateNext() {
+        switch (currentRotation) {
+        case RotationAngle::ROTATE_0:   currentRotation = RotationAngle::ROTATE_90;  break;
+        case RotationAngle::ROTATE_90:  currentRotation = RotationAngle::ROTATE_180; break;
+        case RotationAngle::ROTATE_180: currentRotation = RotationAngle::ROTATE_270; break;
+        case RotationAngle::ROTATE_270: currentRotation = RotationAngle::ROTATE_0;   break;
+        }
     }
 
     /**
-     * ‘åŒ^ƒ^ƒCƒ‹”Ô†‚©‚çƒ^ƒCƒ‹”z’u‚ğŒvZ
+     * ç¾åœ¨ã®å›è»¢è§’åº¦ã‚’å–å¾—
      */
-    void calculateArrangement() {
-        arrangement.indices.clear();
+    RotationAngle getCurrentRotation() const {
+        return currentRotation;
+    }
+
+    /**
+     * å›è»¢è§’åº¦ã‚’è¨­å®š
+     */
+    void setRotation(RotationAngle angle) {
+        currentRotation = angle;
+    }
+
+    /**
+     * å›è»¢è§’åº¦ã‚’åº¦æ•°ã§å–å¾—
+     */
+    int getRotationDegrees() const {
+        return static_cast<int>(currentRotation);
+    }
+
+    /**
+     * å›è»¢çŠ¶æ…‹ã‚’ãƒªã‚»ãƒƒãƒˆï¼ˆ0åº¦ã«æˆ»ã™ï¼‰
+     */
+    void reset() {
+        currentRotation = RotationAngle::ROTATE_0;
+    }
+};
+
+/**
+ * å¤§å‹ã‚¿ã‚¤ãƒ«æƒ…å ±ã‚’ç®¡ç†ã™ã‚‹ã‚¯ãƒ©ã‚¹ï¼ˆå›è»¢æ©Ÿèƒ½å¯¾å¿œï¼‰
+ * 2x2ã¾ãŸã¯4x2ã®ã‚¿ã‚¤ãƒ«é…ç½®ã‚’ã‚µãƒãƒ¼ãƒˆ
+ */
+class LargeTile {
+public:
+    // ã‚¿ã‚¤ãƒ«é…ç½®ã‚¿ã‚¤ãƒ—
+    enum class ArrangementType {
+        TILE_2x2,  // 2x2é…ç½® (4ã‚¿ã‚¤ãƒ«)
+        TILE_4x2   // 4x2é…ç½® (8ã‚¿ã‚¤ãƒ«)
+    };
+
+    // ã‚¿ã‚¤ãƒ«é…ç½®æƒ…å ±
+    struct TileArrangement {
+        ArrangementType type;
+        std::vector<int> indices;  // ã‚¿ã‚¤ãƒ«ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹é…åˆ—
+    };
+
+private:
+    int largeTileId;              // å¤§å‹ã‚¿ã‚¤ãƒ«ç•ªå·ï¼ˆ0-11ï¼‰
+    TileArrangement baseArrangement;  // åŸºæœ¬é…ç½®ï¼ˆ0åº¦ï¼‰
+    LargeTileRotation rotation;       // å›è»¢ç®¡ç†
+
+public:
+    LargeTile(int id) : largeTileId(id) {
+        calculateBaseArrangement();
+    }
+
+    /**
+     * åŸºæœ¬é…ç½®ï¼ˆ0åº¦ï¼‰ã‚’è¨ˆç®—
+     */
+    void calculateBaseArrangement() {
+        baseArrangement.indices.clear();
 
         if (largeTileId >= 0 && largeTileId <= 7) {
-            // 2x2ƒpƒ^[ƒ“ (4ƒ^ƒCƒ‹)
-            arrangement.type = ArrangementType::TILE_2x2;
+            // 2x2ãƒ‘ã‚¿ãƒ¼ãƒ³
+            baseArrangement.type = ArrangementType::TILE_2x2;
             int baseRow = largeTileId / 2;
             int baseCol = largeTileId % 2;
             int baseIndex = baseRow * 8 + baseCol * 2;
 
-            arrangement.indices = {
-                baseIndex,      // topLeft
-                baseIndex + 1,  // topRight
-                baseIndex + 4,  // bottomLeft
-                baseIndex + 5   // bottomRight
+            baseArrangement.indices = {
+                baseIndex,      // [0] å·¦ä¸Š
+                baseIndex + 1,  // [1] å³ä¸Š
+                baseIndex + 4,  // [2] å·¦ä¸‹
+                baseIndex + 5   // [3] å³ä¸‹
             };
         }
         else if (largeTileId >= 8 && largeTileId <= 11) {
-            // 4x2ƒpƒ^[ƒ“ (8ƒ^ƒCƒ‹)
-            arrangement.type = ArrangementType::TILE_4x2;
+            // 4x2ãƒ‘ã‚¿ãƒ¼ãƒ³
+            baseArrangement.type = ArrangementType::TILE_4x2;
             int patternIndex = largeTileId - 8;
             int baseIndex = 32 + patternIndex * 8;
 
-            arrangement.indices = {
-                baseIndex,      // row0 col0
-                baseIndex + 1,  // row0 col1
-                baseIndex + 2,  // row0 col2
-                baseIndex + 3,  // row0 col3
-                baseIndex + 4,  // row1 col0
-                baseIndex + 5,  // row1 col1
-                baseIndex + 6,  // row1 col2
-                baseIndex + 7   // row1 col3
+            baseArrangement.indices = {
+                baseIndex,      // [0] 
+                baseIndex + 1,  // [1]
+                baseIndex + 2,  // [2]
+                baseIndex + 3,  // [3]
+                baseIndex + 4,  // [4]
+                baseIndex + 5,  // [5]
+                baseIndex + 6,  // [6]
+                baseIndex + 7   // [7]
             };
         }
     }
 
-    // ƒQƒbƒ^[
-    int getId() const { return largeTileId; }
-    const TileArrangement& getArrangement() const { return arrangement; }
+    /**
+     * ç¾åœ¨ã®å›è»¢ã‚’é©ç”¨ã—ãŸé…ç½®ã‚’å–å¾—
+     */
+    TileArrangement getArrangement() const {
+        return getRotatedArrangement(rotation.getCurrentRotation());
+    }
 
     /**
-     * •`‰æˆÊ’u‚ğŒvZ
+     * æŒ‡å®šå›è»¢è§’åº¦ã§ã®é…ç½®ã‚’å–å¾—
      */
-    std::vector<sf::Vector2i> getDrawPositions(
-        const sf::Vector2i& basePos,
-        int tileSize
-    ) const {
-        std::vector<sf::Vector2i> positions;
+    TileArrangement getRotatedArrangement(RotationAngle angle) const {
+        TileArrangement rotated = baseArrangement;
 
-        if (arrangement.type == ArrangementType::TILE_2x2) {
-            // 2x2”z’u
-            positions = {
-                basePos,                                      // ¶ã
-                sf::Vector2i(basePos.x + tileSize, basePos.y),     // ‰Eã
-                sf::Vector2i(basePos.x, basePos.y + tileSize),     // ¶‰º
-                sf::Vector2i(basePos.x + tileSize, basePos.y + tileSize) // ‰E‰º
-            };
+        if (angle == RotationAngle::ROTATE_0) {
+            return rotated; // å›è»¢ãªã—
+        }
+
+        // ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹ã‚’å›è»¢ã«å¿œã˜ã¦å†é…ç½®
+        if (baseArrangement.type == ArrangementType::TILE_2x2) {
+            rotated.indices = rotate2x2Indices(baseArrangement.indices, angle);
         }
         else {
-            // 4x2”z’u
+            rotated.indices = rotate4x2Indices(baseArrangement.indices, angle);
+        }
+
+        return rotated;
+    }
+
+    /**
+     * å›è»¢åˆ¶å¾¡
+     */
+    void rotateNext() {
+        rotation.rotateNext();
+    }
+
+    void setRotation(RotationAngle angle) {
+        rotation.setRotation(angle);
+    }
+
+    RotationAngle getCurrentRotation() const {
+        return rotation.getCurrentRotation();
+    }
+
+    /**
+     * æç”»ä½ç½®ã‚’å›è»¢ã«å¿œã˜ã¦è¨ˆç®—
+     */
+    std::vector<sf::Vector2i> getDrawPositions(const sf::Vector2i& basePos, int tileSize) const {
+        std::vector<sf::Vector2i> positions;
+        RotationAngle angle = rotation.getCurrentRotation();
+
+        if (baseArrangement.type == ArrangementType::TILE_2x2) {
+            positions = getRotated2x2Positions(basePos, tileSize, angle);
+        }
+        else {
+            positions = getRotated4x2Positions(basePos, tileSize, angle);
+        }
+
+        return positions;
+    }
+
+    // ===== ã‚²ãƒƒã‚¿ãƒ¼ =====
+    int getId() const { return largeTileId; }
+
+    std::string getDebugInfo() const {
+        auto arrangement = getArrangement();
+        std::string info = "LargeTile[" + std::to_string(largeTileId) +
+            "] Rotation[" + std::to_string(rotation.getRotationDegrees()) + "Â°]: ";
+        for (int index : arrangement.indices) {
+            info += std::to_string(index) + ",";
+        }
+        if (!info.empty()) info.pop_back(); // æœ€å¾Œã®ã‚«ãƒ³ãƒã‚’å‰Šé™¤
+        return info;
+    }
+
+private:
+    /**
+     * 2x2é…ç½®ã®ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹å›è»¢
+     * é…åˆ—é †åº: [0]=å·¦ä¸Š, [1]=å³ä¸Š, [2]=å·¦ä¸‹, [3]=å³ä¸‹
+     */
+    std::vector<int> rotate2x2Indices(const std::vector<int>& original, RotationAngle angle) const {
+        if (original.size() != 4) return original;
+
+        switch (angle) {
+        case RotationAngle::ROTATE_90:
+            // æ™‚è¨ˆå›ã‚Š90åº¦: å·¦ä¸Šâ†’å³ä¸Š, å³ä¸Šâ†’å³ä¸‹, å³ä¸‹â†’å·¦ä¸‹, å·¦ä¸‹â†’å·¦ä¸Š
+            return { original[2], original[0], original[3], original[1] };
+        case RotationAngle::ROTATE_180:
+            // 180åº¦: å·¦ä¸Šâ†”å³ä¸‹, å³ä¸Šâ†”å·¦ä¸‹
+            return { original[3], original[2], original[1], original[0] };
+        case RotationAngle::ROTATE_270:
+            // åæ™‚è¨ˆå›ã‚Š90åº¦ï¼ˆæ™‚è¨ˆå›ã‚Š270åº¦ï¼‰
+            return { original[1], original[3], original[0], original[2] };
+        default:
+            return original;
+        }
+    }
+
+    /**
+     * 4x2é…ç½®ã®ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹å›è»¢
+     * é…åˆ—é †åº: [0][1][2][3]
+     *          [4][5][6][7]
+     */
+    std::vector<int> rotate4x2Indices(const std::vector<int>& original, RotationAngle angle) const {
+        if (original.size() != 8) return original;
+
+        switch (angle) {
+        case RotationAngle::ROTATE_90:
+            // 4x2 â†’ 2x4 ï¼ˆæ™‚è¨ˆå›ã‚Š90åº¦ï¼‰
+            return { original[4], original[0], original[5], original[1],
+                    original[6], original[2], original[7], original[3] };
+        case RotationAngle::ROTATE_180:
+            // 4x2 â†’ 4x2 ï¼ˆ180åº¦åè»¢ï¼‰
+            return { original[7], original[6], original[5], original[4],
+                    original[3], original[2], original[1], original[0] };
+        case RotationAngle::ROTATE_270:
+            // 4x2 â†’ 2x4 ï¼ˆåæ™‚è¨ˆå›ã‚Š90åº¦ï¼‰
+            return { original[3], original[7], original[2], original[6],
+                    original[1], original[5], original[0], original[4] };
+        default:
+            return original;
+        }
+    }
+
+    /**
+     * 2x2ã®æç”»ä½ç½®ã‚’å›è»¢ã«å¿œã˜ã¦è¨ˆç®—
+     */
+    std::vector<sf::Vector2i> getRotated2x2Positions(const sf::Vector2i& basePos, int tileSize, RotationAngle angle) const {
+        std::vector<sf::Vector2i> positions;
+
+        switch (angle) {
+        case RotationAngle::ROTATE_0:
+            positions = {
+                basePos,                                      // å·¦ä¸Š
+                sf::Vector2i(basePos.x + tileSize, basePos.y),     // å³ä¸Š
+                sf::Vector2i(basePos.x, basePos.y + tileSize),     // å·¦ä¸‹
+                sf::Vector2i(basePos.x + tileSize, basePos.y + tileSize) // å³ä¸‹
+            };
+            break;
+        case RotationAngle::ROTATE_90:
+            // 90åº¦å›è»¢: 2x2ã®ã¾ã¾ã€é…ç½®é †åºã‚’å¤‰æ›´
+            positions = {
+                sf::Vector2i(basePos.x, basePos.y + tileSize),     // å·¦ä¸‹â†’å·¦ä¸Š
+                basePos,                                      // å·¦ä¸Šâ†’å³ä¸Š
+                sf::Vector2i(basePos.x + tileSize, basePos.y + tileSize), // å³ä¸‹â†’å·¦ä¸‹
+                sf::Vector2i(basePos.x + tileSize, basePos.y)      // å³ä¸Šâ†’å³ä¸‹
+            };
+            break;
+        case RotationAngle::ROTATE_180:
+            positions = {
+                sf::Vector2i(basePos.x + tileSize, basePos.y + tileSize), // å³ä¸‹
+                sf::Vector2i(basePos.x, basePos.y + tileSize),     // å·¦ä¸‹
+                sf::Vector2i(basePos.x + tileSize, basePos.y),     // å³ä¸Š
+                basePos                                       // å·¦ä¸Š
+            };
+            break;
+        case RotationAngle::ROTATE_270:
+            positions = {
+                sf::Vector2i(basePos.x + tileSize, basePos.y),     // å³ä¸Šâ†’å·¦ä¸Š
+                sf::Vector2i(basePos.x + tileSize, basePos.y + tileSize), // å³ä¸‹â†’å³ä¸Š
+                basePos,                                      // å·¦ä¸Šâ†’å·¦ä¸‹
+                sf::Vector2i(basePos.x, basePos.y + tileSize)      // å·¦ä¸‹â†’å³ä¸‹
+            };
+            break;
+        }
+
+        return positions;
+    }
+
+    /**
+     * 4x2ã®æç”»ä½ç½®ã‚’å›è»¢ã«å¿œã˜ã¦è¨ˆç®—
+     */
+    std::vector<sf::Vector2i> getRotated4x2Positions(const sf::Vector2i& basePos, int tileSize, RotationAngle angle) const {
+        std::vector<sf::Vector2i> positions;
+
+        switch (angle) {
+        case RotationAngle::ROTATE_0:
+            // 4x2: æ¨™æº–é…ç½®
             for (int row = 0; row < 2; row++) {
                 for (int col = 0; col < 4; col++) {
                     positions.push_back(sf::Vector2i(
@@ -116,34 +319,56 @@ public:
                     ));
                 }
             }
+            break;
+        case RotationAngle::ROTATE_90:
+            // 2x4: 90åº¦å›è»¢ï¼ˆç¸¦é•·ã«ãªã‚‹ï¼‰
+            for (int row = 0; row < 4; row++) {
+                for (int col = 0; col < 2; col++) {
+                    positions.push_back(sf::Vector2i(
+                        basePos.x + col * tileSize,
+                        basePos.y + row * tileSize
+                    ));
+                }
+            }
+            break;
+        case RotationAngle::ROTATE_180:
+            // 4x2: 180åº¦å›è»¢ï¼ˆå³ä¸‹ã‹ã‚‰å·¦ä¸Šã¸ï¼‰
+            for (int row = 1; row >= 0; row--) {
+                for (int col = 3; col >= 0; col--) {
+                    positions.push_back(sf::Vector2i(
+                        basePos.x + col * tileSize,
+                        basePos.y + row * tileSize
+                    ));
+                }
+            }
+            break;
+        case RotationAngle::ROTATE_270:
+            // 2x4: 270åº¦å›è»¢ï¼ˆç¸¦é•·ã€ä¸‹ã‹ã‚‰ä¸Šã¸ï¼‰
+            for (int row = 3; row >= 0; row--) {
+                for (int col = 1; col >= 0; col--) {
+                    positions.push_back(sf::Vector2i(
+                        basePos.x + col * tileSize,
+                        basePos.y + row * tileSize
+                    ));
+                }
+            }
+            break;
         }
-        return positions;
-    }
 
-    /**
-     * ƒfƒoƒbƒOî•ñæ“¾
-     */
-    std::string getDebugInfo() const {
-        std::string info = "LargeTile[" + std::to_string(largeTileId) + "]: ";
-        for (int index : arrangement.indices) {
-            info += std::to_string(index) + ",";
-        }
-        info.pop_back(); // ÅŒã‚ÌƒJƒ“ƒ}‚ğíœ
-        return info;
+        return positions;
     }
 };
 
-// ... (LargeTileTool‚ÆLargeTileManager‚Í•ÏX‚È‚µ) ...
 /**
- * ‘åŒ^ƒ^ƒCƒ‹ƒc[ƒ‹
- * ƒNƒŠƒbƒNˆÊ’u‚É2x2‚Ì‘åŒ^ƒ^ƒCƒ‹‚ğ”z’u
+ * å¤§å‹ã‚¿ã‚¤ãƒ«ãƒ„ãƒ¼ãƒ«ï¼ˆå›è»¢å¯¾å¿œç‰ˆï¼‰
+ * ã‚¯ãƒªãƒƒã‚¯ä½ç½®ã«2x2ã®å¤§å‹ã‚¿ã‚¤ãƒ«ã‚’é…ç½®
  */
 class LargeTileTool : public DrawingTool {
 private:
-    int currentLargeTileId = 0;  // Œ»İ‘I‘ğ’†‚Ì‘åŒ^ƒ^ƒCƒ‹”Ô†
-    bool isDrawing = false;              // •`‰æ’†ƒtƒ‰ƒO
-    sf::Vector2i startDrawPos;          // •`‰æŠJnˆÊ’u
-    sf::Vector2i lastPlacedPos;         // ÅŒã‚É”z’u‚µ‚½ˆÊ’u
+    int currentLargeTileId = 0;  // ç¾åœ¨é¸æŠä¸­ã®å¤§å‹ã‚¿ã‚¤ãƒ«ç•ªå·
+    bool isDrawing = false;              // æç”»ä¸­ãƒ•ãƒ©ã‚°
+    sf::Vector2i startDrawPos;          // æç”»é–‹å§‹ä½ç½®
+    sf::Vector2i lastPlacedPos;         // æœ€å¾Œã«é…ç½®ã—ãŸä½ç½®
 
 public:
     void onDrawStart(const sf::Vector2i& startPos,
@@ -182,8 +407,8 @@ public:
     bool supportsContinuousDrawing() const override { return true; }
 
     /**
-     * ‘åŒ^ƒ^ƒCƒ‹”Ô†‚ğİ’è
-     * @param largeTileId 0-11‚Ì‘åŒ^ƒ^ƒCƒ‹”Ô†
+     * å¤§å‹ã‚¿ã‚¤ãƒ«ç•ªå·ã‚’è¨­å®š
+     * @param largeTileId 0-11ã®å¤§å‹ã‚¿ã‚¤ãƒ«ç•ªå·
      */
     void setLargeTileId(int largeTileId) {
         if (largeTileId >= 0 && largeTileId <= 11) {
@@ -192,7 +417,7 @@ public:
     }
 
     /**
-     * Œ»İ‚Ì‘åŒ^ƒ^ƒCƒ‹”Ô†‚ğæ“¾
+     * ç¾åœ¨ã®å¤§å‹ã‚¿ã‚¤ãƒ«ç•ªå·ã‚’å–å¾—
      */
     int getLargeTileId() const {
         return currentLargeTileId;
@@ -200,14 +425,13 @@ public:
 
 private:
     /**
-     * ‘åŒ^ƒ^ƒCƒ‹‚ğƒLƒƒƒ“ƒoƒX‚É”z’u
-     * @param basePos ”z’uŠî€ˆÊ’uiƒXƒNƒŠ[ƒ“À•Wj
-     * @param canvas •`‰æ‘ÎÛƒLƒƒƒ“ƒoƒX
-     * @param view CanvasViewƒCƒ“ƒXƒ^ƒ“ƒX
+     * ä½ç½®ã‚’å¤§å‹ã‚¿ã‚¤ãƒ«ã‚µã‚¤ã‚ºã¨ãƒ–ãƒ©ã‚·ã‚µã‚¤ã‚ºã«ã‚¹ãƒŠãƒƒãƒ—
+     * @param pos å…ƒã®ä½ç½®
+     * @param view CanvasViewã‚¤ãƒ³ã‚¹ã‚¿ãƒ³ã‚¹
+     * @param screenTileSize ã‚¹ã‚¯ãƒªãƒ¼ãƒ³ä¸Šã®ã‚¿ã‚¤ãƒ«ã‚µã‚¤ã‚º
+     * @param brushSize ãƒ–ãƒ©ã‚·ã‚µã‚¤ã‚º
+     * @param canvasTileSize ã‚­ãƒ£ãƒ³ãƒã‚¹ã®å®Ÿéš›ã®ã‚¿ã‚¤ãƒ«ã‚µã‚¤ã‚º
      */
-     /**
-       * ˆÊ’u‚ğ‘åŒ^ƒ^ƒCƒ‹ƒTƒCƒY‚Æƒuƒ‰ƒVƒTƒCƒY‚ÉƒXƒiƒbƒv
-       */
     sf::Vector2i snapPosition(const sf::Vector2i& pos,
         const CanvasView& view,
         int screenTileSize,
@@ -215,41 +439,49 @@ private:
         int canvasTileSize) const;
 
     /**
-       * ’PŒÂ‚Ì‘åŒ^ƒ^ƒCƒ‹‚ğ”z’u
-       */
+     * å˜å€‹ã®å¤§å‹ã‚¿ã‚¤ãƒ«ã‚’é…ç½®
+     */
     void placeLargeTile(const sf::Vector2i& canvasPos,
         Canvas& canvas,
         const CanvasView& view) const;
 
     /**
-     * ƒuƒ‰ƒVƒTƒCƒY‚É‰‚¶‚Ä•¡”‚Ì‘åŒ^ƒ^ƒCƒ‹‚ğ”z’u
+     * ãƒ–ãƒ©ã‚·ã‚µã‚¤ã‚ºã«å¿œã˜ã¦è¤‡æ•°ã®å¤§å‹ã‚¿ã‚¤ãƒ«ã‚’é…ç½®
      */
     void placeLargeTiles(const sf::Vector2i& basePos,
         int brushSize,
         Canvas& canvas,
         const CanvasView& view) const;
+
+    /**
+     * å›è»¢ã‚¤ãƒ³ã‚¸ã‚±ãƒ¼ã‚¿ãƒ¼ã‚’æç”»
+     */
+    void drawRotationIndicator(sf::RenderWindow& window,
+        const sf::Vector2i& center,
+        RotationAngle rotation) const;
 };
 
 /**
- * ‘åŒ^ƒ^ƒCƒ‹ŠÇ—ƒNƒ‰ƒX
- * ‘åŒ^ƒ^ƒCƒ‹‚Ì‘I‘ğ‚Æî•ñŠÇ—
+ * å¤§å‹ã‚¿ã‚¤ãƒ«ç®¡ç†ã‚¯ãƒ©ã‚¹ï¼ˆå›è»¢å¯¾å¿œç‰ˆï¼‰
+ * å¤§å‹ã‚¿ã‚¤ãƒ«ã®é¸æŠã¨æƒ…å ±ç®¡ç†
  */
 class LargeTileManager {
 private:
     std::vector<LargeTile> largeTiles;
     int currentSelection = 0;
+    LargeTileRotation globalRotation; // å…¨ä½“ã®å›è»¢çŠ¶æ…‹
 
 public:
     LargeTileManager() {
-        // 12ŒÂ‚Ì‘åŒ^ƒ^ƒCƒ‹‚ğ‰Šú‰»
+        // 12å€‹ã®å¤§å‹ã‚¿ã‚¤ãƒ«ã‚’åˆæœŸåŒ–
         for (int i = 0; i < 12; ++i) {
             largeTiles.emplace_back(i);
         }
     }
 
     /**
-     * ‘åŒ^ƒ^ƒCƒ‹‚ğ‘I‘ğ
-     * @param id 0-11‚Ì‘åŒ^ƒ^ƒCƒ‹”Ô†
+     * å¤§å‹ã‚¿ã‚¤ãƒ«ã‚’é¸æŠ
+     * @param id 0-11ã®å¤§å‹ã‚¿ã‚¤ãƒ«ç•ªå·
      */
     void selectLargeTile(int id) {
         if (id >= 0 && id < 12) {
@@ -258,31 +490,74 @@ public:
     }
 
     /**
-     * Œ»İ‘I‘ğ’†‚Ì‘åŒ^ƒ^ƒCƒ‹‚ğæ“¾
+     * ç¾åœ¨é¸æŠä¸­ã®å¤§å‹ã‚¿ã‚¤ãƒ«ã‚’å–å¾—
      */
+    LargeTile& getCurrentLargeTile() {
+        return largeTiles[currentSelection];
+    }
+
     const LargeTile& getCurrentLargeTile() const {
         return largeTiles[currentSelection];
     }
 
     /**
-     * w’è”Ô†‚Ì‘åŒ^ƒ^ƒCƒ‹‚ğæ“¾
+     * æŒ‡å®šIDã®å¤§å‹ã‚¿ã‚¤ãƒ«ã‚’å–å¾—
      */
     const LargeTile& getLargeTile(int id) const {
         if (id >= 0 && id < 12) {
             return largeTiles[id];
         }
-        return largeTiles[0];  // ƒtƒH[ƒ‹ƒoƒbƒN
+        return largeTiles[0];  // ãƒ•ã‚©ãƒ¼ãƒ«ãƒãƒƒã‚¯
     }
 
     /**
-     * Œ»İ‚Ì‘I‘ğ”Ô†‚ğæ“¾
+     * ç¾åœ¨é¸æŠä¸­ã®å¤§å‹ã‚¿ã‚¤ãƒ«ã‚’å›è»¢
+     */
+    void rotateCurrentTile() {
+        largeTiles[currentSelection].rotateNext();
+    }
+
+    /**
+     * å…¨ä½“å›è»¢ã‚’æ¬¡ã«é€²ã‚ã‚‹
+     */
+    void rotateGlobal() {
+        globalRotation.rotateNext();
+        // å…¨ã¦ã®å¤§å‹ã‚¿ã‚¤ãƒ«ã«å›è»¢ã‚’é©ç”¨
+        for (auto& tile : largeTiles) {
+            tile.setRotation(globalRotation.getCurrentRotation());
+        }
+    }
+
+    /**
+     * ç¾åœ¨ã®å›è»¢çŠ¶æ…‹ã‚’å–å¾—
+     */
+    RotationAngle getCurrentRotation() const {
+        return largeTiles[currentSelection].getCurrentRotation();
+    }
+
+    int getCurrentRotationDegrees() const {
+        return static_cast<int>(getCurrentRotation());
+    }
+
+    /**
+     * å›è»¢ã‚’ãƒªã‚»ãƒƒãƒˆ
+     */
+    void resetRotation() {
+        globalRotation.reset();
+        for (auto& tile : largeTiles) {
+            tile.setRotation(RotationAngle::ROTATE_0);
+        }
+    }
+
+    /**
+     * ç¾åœ¨ã®é¸æŠç•ªå·ã‚’å–å¾—
      */
     int getCurrentSelection() const {
         return currentSelection;
     }
 
     /**
-     * ‘S‘åŒ^ƒ^ƒCƒ‹‚Ìî•ñ‚ğƒfƒoƒbƒOo—Í
+     * å…¨å¤§å‹ã‚¿ã‚¤ãƒ«ã®æƒ…å ±ã‚’ãƒ‡ãƒãƒƒã‚°å‡ºåŠ›
      */
     void printDebugInfo() const {
         for (const auto& tile : largeTiles) {

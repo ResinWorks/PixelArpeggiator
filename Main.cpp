@@ -1,5 +1,6 @@
 ﻿#ifdef _WIN32
 #define _CRT_SECURE_NO_WARNINGS
+#define _USE_MATH_DEFINES
 #endif
 
 
@@ -37,11 +38,19 @@ private:
     std::vector<sf::CircleShape> knobs;
     std::vector<sf::Text> labels;
 
+
+
+
 public:
     UIManager(const sf::Font& font) {
         initializeButtons();
         initializeSliders(font);
     }
+
+    //最後尾に定義----------------
+    //void drawRotationGuide(sf::RenderWindow& window, const sf::Font& font, int rotationDegrees) {}
+    //-----------------------------
+
 
     void initializeButtons() {
         // ===== 既存のボタン =====
@@ -71,7 +80,8 @@ public:
         // ===== 新規追加：大型タイルパレット表示切り替えボタン =====
         buttons.emplace_back(std::make_unique<Button>("L-Palette", sf::Vector2f(250, 690), sf::Vector2f(80, 30))); // 新規追加
 
-
+        // ===== 新規追加：回転ボタン =====
+        buttons.emplace_back(std::make_unique<Button>("Rotate", sf::Vector2f(330, 690), sf::Vector2f(70, 30)));
         // ===== ビュー関連ボタン =====
         buttons.emplace_back(std::make_unique<Button>("Reset View", sf::Vector2f(20, 770), sf::Vector2f(100, 30)));
     }
@@ -154,7 +164,8 @@ public:
         TOOL_ELLIPSE = 14,   // 新規追加：楕円ツール
         TOOL_LARGE_TILE = 15,  // 新規追加
         LARGE_TILE_PALETTE_TOGGLE = 16,  // 新規追加
-        RESET_VIEW = 17      // インデックス更新
+        ROTATE_BUTTON = 17,     // 新規追加：回転ボタン
+        RESET_VIEW = 18      // インデックス更新
     };
 
     Button& getButton(ButtonIndex index) {
@@ -175,7 +186,9 @@ public:
      * @param activeToolType 現在アクティブなツールタイプ
      */
     void drawButtons(sf::RenderWindow& window, const sf::Font& font, ToolManager::ToolType activeToolType, int currentBrushSize,
-        bool largeTilePaletteVisible = false)
+        bool largeTilePaletteVisible = false, int rotationDegrees = 0)
+
+
     {
         for (size_t i = 0; i < buttons.size(); ++i) {
             // ツールボタンの場合、アクティブ状態を考慮
@@ -195,6 +208,10 @@ public:
             if (i == BRUSH_MEDIUM && currentBrushSize == 3) isActive = true;
             if (i == BRUSH_LARGE && currentBrushSize == 5) isActive = true;
 
+
+            // 回転ボタンのアクティブ状態（0度以外の時にアクティブ表示）
+            if (i == ROTATE_BUTTON && rotationDegrees != 0) isActive = true;
+
             // アクティブなツールボタンは色を変える
             if (isActive) {
                 // アクティブ時の強調表示（一時的に色を変更）
@@ -202,6 +219,12 @@ public:
             }
 
             buttons[i]->draw(window, font);
+
+
+            // 回転ボタンに角度表示を追加
+            if (i == ROTATE_BUTTON) {
+                drawRotationIndicator(window, font, buttons[i]->getPosition(), rotationDegrees);
+            }
 
             // 元の状態に戻す
             if (isActive) {
@@ -315,6 +338,60 @@ public:
         // テキスト表示は簡略化（実際には sf::Text を使用）
     }
 
+
+    //追加-------------------------------------------------------------------------------------
+
+    /**
+    * 回転ボタンに角度表示を追加
+    */
+    void drawRotationIndicator(sf::RenderWindow& window, const sf::Font& font,
+        const sf::Vector2f& buttonPos, int rotationDegrees) {
+        if (rotationDegrees == 0) return; // 0度の時は表示しない
+
+        // 角度テキストを作成
+        sf::Text rotationText(std::to_string(rotationDegrees) + "°", font, 10);
+        rotationText.setPosition(buttonPos.x + 75, buttonPos.y + 20); // ボタンの右下
+        rotationText.setFillColor(sf::Color::Yellow);
+        window.draw(rotationText);
+
+        // 回転を視覚的に表示する矢印アイコン（オプション）
+        drawRotationArrow(window, buttonPos, rotationDegrees);
+    }
+
+
+
+    /**
+     * 回転方向を示す矢印を描画
+     */
+    void drawRotationArrow(sf::RenderWindow& window, const sf::Vector2f& buttonPos, int rotationDegrees) {
+        sf::Vector2f center(buttonPos.x + 35, buttonPos.y + 15); // ボタン中央
+        float radius = 8.0f;
+
+        // 回転角度に応じた矢印の描画
+        sf::VertexArray arrow(sf::Lines);
+
+        // 角度をラジアンに変換
+        float angleRad = rotationDegrees * M_PI / 180.0f;
+
+        // 矢印の始点と終点
+        sf::Vector2f start(center.x + radius * cos(angleRad),
+            center.y + radius * sin(angleRad));
+        sf::Vector2f end(center.x + (radius - 3) * cos(angleRad + M_PI),
+            center.y + (radius - 3) * sin(angleRad + M_PI));
+
+        arrow.append(sf::Vertex(start, sf::Color::Cyan));
+        arrow.append(sf::Vertex(end, sf::Color::Cyan));
+
+        window.draw(arrow);
+
+        // 矢印の先端
+        sf::CircleShape arrowHead(2.0f);
+        arrowHead.setOrigin(2.0f, 2.0f);
+        arrowHead.setPosition(start);
+        arrowHead.setFillColor(sf::Color::Cyan);
+        window.draw(arrowHead);
+    }
+    //-------------------------------------------------------------------------------------
    
 };
 
@@ -415,7 +492,21 @@ public:
 };
 
 
+/**
+ * 回転の視覚的ガイドを描画
+ * @param window 描画ウィンドウ
+ * @param font フォント
+ * @param rotationDegrees 現在の回転角度
+ */
+void drawRotationGuide(sf::RenderWindow& window, const sf::Font& font, int rotationDegrees) {
+    if (rotationDegrees == 0) return;
 
+    // 右上隅に角度テキストのみ表示
+    sf::Text rotationText(std::to_string(rotationDegrees) + "°", font, 20);
+    rotationText.setPosition(WINDOW_WIDTH - 60, 20);
+    rotationText.setFillColor(sf::Color::Yellow);
+    window.draw(rotationText);
+}
 
 
 int main() {
@@ -500,6 +591,21 @@ int main() {
                 sf::Vector2i clickPos(event.mouseButton.x, event.mouseButton.y);
 
 
+
+                //追加：大型パレット処理---------------------------------------------------------------------------------------
+               
+                 // ===== 新規追加：回転ボタンの処理 =====
+                if (uiManager.getButton(UIManager::ROTATE_BUTTON).isClicked(clickPos, true)) {
+                    largeTileManager.rotateCurrentTile(); // 現在選択中の大型タイルを回転
+
+                    // 大型タイルツールが選択されている場合、ツールに回転情報を反映
+                    if (drawingManager.getCurrentToolType() == ToolManager::ToolType::LARGE_TILE) {
+                        if (auto* largeTileTool = dynamic_cast<LargeTileTool*>(drawingManager.getCurrentTool())) {
+                            largeTileTool->setLargeTileId(currentLargeTileId);
+                        }
+                    }
+                }
+
                 // ===== 新規追加：大型タイルパレット表示切り替え =====
                 if (uiManager.getButton(UIManager::LARGE_TILE_PALETTE_TOGGLE).isClicked(clickPos, true)) {
                     largeTilePaletteOverlay.setVisible(!largeTilePaletteOverlay.getVisible());
@@ -520,13 +626,16 @@ int main() {
                             largeTileTool->setLargeTileId(currentLargeTileId);
                         }
 
+                        /*
                         // 選択後はオーバーレイを非表示（オプション）
                         largeTilePaletteOverlay.setVisible(false);
 
+                        */
                         continue;  // 他のクリック処理をスキップ
                     }
                 }
 
+                //---------------------------------------------------------------------------------------
 
                 // ===== ツール切り替えボタン =====
                 if (uiManager.getButton(UIManager::TOOL_BRUSH).isClicked(clickPos, true)) {
@@ -749,9 +858,52 @@ int main() {
                         tilePalette.getSelectedIndex(), brushSize);
                 }
             }
+
+
+            // ===== キーボードショートカット（新規追加） =================================================================
+            if (event.type == sf::Event::KeyPressed) {
+                // Rキーで回転
+                if (event.key.code == sf::Keyboard::R) {
+                    largeTileManager.rotateCurrentTile();
+
+                    if (drawingManager.getCurrentToolType() == ToolManager::ToolType::LARGE_TILE) {
+                        if (auto* largeTileTool = dynamic_cast<LargeTileTool*>(drawingManager.getCurrentTool())) {
+                            largeTileTool->setLargeTileId(currentLargeTileId);
+                        }
+                    }
+                }
+
+                // 0-9, Q, W キーで大型タイル選択
+                if (event.key.code >= sf::Keyboard::Num0 && event.key.code <= sf::Keyboard::Num9) {
+                    int tileId = event.key.code - sf::Keyboard::Num0;
+                    if (tileId < 12) {
+                        currentLargeTileId = tileId;
+                        largeTileManager.selectLargeTile(currentLargeTileId);
+                        drawingManager.setTool(ToolManager::ToolType::LARGE_TILE);
+
+                        if (auto* largeTileTool = dynamic_cast<LargeTileTool*>(drawingManager.getCurrentTool())) {
+                            largeTileTool->setLargeTileId(currentLargeTileId);
+                        }
+                    }
+                }
+                if (event.key.code == sf::Keyboard::Q) {
+                    currentLargeTileId = 10;
+                    largeTileManager.selectLargeTile(currentLargeTileId);
+                    drawingManager.setTool(ToolManager::ToolType::LARGE_TILE);
+                }
+                if (event.key.code == sf::Keyboard::W) {
+                    currentLargeTileId = 11;
+                    largeTileManager.selectLargeTile(currentLargeTileId);
+                    drawingManager.setTool(ToolManager::ToolType::LARGE_TILE);
+                }
+            }
+            // ===================================================================================================================
+
+
+
         }
 
-
+     
         // ===== パン操作更新 =====
         if (isPanning && sf::Mouse::isButtonPressed(sf::Mouse::Middle)) {
             sf::Vector2f delta = static_cast<sf::Vector2f>(mousePos - lastPanPos);
@@ -814,20 +966,29 @@ int main() {
         drawText(window, font, canvasView.getStatusString(),
             14, sf::Vector2f(20, 20), sf::Color::Cyan);
 
-        // ツール情報
+        // ツール情報（回転情報追加）
         std::string toolInfo = "Tool: " + drawingManager.getCurrentToolName();
         if (drawingManager.getCurrentToolType() == ToolManager::ToolType::LARGE_TILE) {
+            int rotationDegrees = largeTileManager.getCurrentRotationDegrees();
             toolInfo += " [" + std::to_string(currentLargeTileId) + "]";
+            if (rotationDegrees != 0) {
+                toolInfo += " " + std::to_string(rotationDegrees) + "°";
+            }
         }
         else {
             toolInfo += " | Brush Size: " + std::to_string(brushSize);
         }
         drawText(window, font, toolInfo, 14, sf::Vector2f(20, 40), sf::Color::Yellow);
 
+
+
         // 大型タイルツール使用時の説明
         if (drawingManager.getCurrentToolType() == ToolManager::ToolType::LARGE_TILE) {
             std::string largeTileInfo = "Large Tile: 0-9,Q,W keys to select | Current: " + std::to_string(currentLargeTileId);
             drawText(window, font, largeTileInfo, 12, sf::Vector2f(20, 80), sf::Color(255, 200, 100));
+
+            // 回転の視覚的ガイド
+            drawRotationGuide(window, font, largeTileManager.getCurrentRotationDegrees());
 
            /*
             // 大型タイルの構成タイル番号を表示
@@ -879,10 +1040,11 @@ int main() {
             tilePalette.getAllColorPalettes(),
             showGrid, gridSpacing, gridShrink);
 
-        // UI elements（大型タイルパレット表示状態を渡す）
+        // UI elements（回転状態を渡す）
         uiManager.drawButtons(window, font, drawingManager.getCurrentToolType(), brushSize,
-            largeTilePaletteOverlay.getVisible());
+            largeTilePaletteOverlay.getVisible(), largeTileManager.getCurrentRotationDegrees());
         uiManager.drawSliders(window, gridSpacing, gridShrink, tileGridColor);
+
 
         // ===== カーソル＆プレビュー描画（新しいツールシステム） =====
         if (canvas.containsInView(canvasView, mousePos)) {
@@ -1018,3 +1180,4 @@ int main() {
 
     return 0;
 }
+

@@ -1,7 +1,14 @@
-// ===== 修正版 LargeTileSystem.cpp =====
+//===== LargeTileSystem.cpp 完全版（回転機能対応） =====
 #include "LargeTileSystem.hpp"
 #include "Canvas.hpp"
 #include "CanvasView.hpp"
+
+#ifndef M_PI
+#define M_PI 3.14159265358979323846
+#endif
+
+// ===== グローバル変数の定義（リンクエラー解決） =====
+LargeTileManager largeTileManager;
 
 // ===== LargeTileTool 実装 =====
 
@@ -19,7 +26,7 @@ void LargeTileTool::onDrawStart(const sf::Vector2i& startPos,
     startDrawPos = startPos;
     lastPlacedPos = startPos;
 
-    // **修正：Canvasから実際のタイルサイズを取得**
+    // 実際のキャンバスタイルサイズを取得
     int canvasTileSize = canvas.getTileSize();
     int screenTileSize = static_cast<int>(canvasTileSize * view.getZoom());
     sf::Vector2i snappedPos = snapPosition(startPos, view, screenTileSize, brushSize, canvasTileSize);
@@ -37,7 +44,7 @@ void LargeTileTool::onDrawContinue(const sf::Vector2i& currentPos,
 {
     if (!isDrawing) return;
 
-    // **修正：Canvasから実際のタイルサイズを取得**
+    // 実際のキャンバスタイルサイズを取得
     int canvasTileSize = canvas.getTileSize();
     int screenTileSize = static_cast<int>(canvasTileSize * view.getZoom());
     sf::Vector2i snappedPos = snapPosition(currentPos, view, screenTileSize, brushSize, canvasTileSize);
@@ -63,7 +70,7 @@ void LargeTileTool::onDrawEnd(const sf::Vector2i& endPos,
 }
 
 /**
- * プレビュー描画
+ * プレビュー描画（回転対応）
  */
 void LargeTileTool::drawPreview(sf::RenderWindow& window,
     const sf::Vector2i& startPos,
@@ -71,15 +78,28 @@ void LargeTileTool::drawPreview(sf::RenderWindow& window,
     const CanvasView& view,
     int brushSize) const
 {
-    // **修正：固定値6ではなく実際のタイルサイズを使用**
-    // この関数ではCanvasへのアクセスがないため、引数で渡すか別の方法が必要
-    // 暫定的に6のままにするか、別の方法を検討
+    // 現在の大型タイルの回転状態を取得
+    const LargeTile& currentTile = largeTileManager.getCurrentLargeTile();
+    RotationAngle rotation = currentTile.getCurrentRotation();
+
     int estimatedTileSize = 6; // 暫定値
     sf::Vector2i snappedPos = snapPosition(currentPos, view, estimatedTileSize, brushSize, estimatedTileSize);
 
-    // 基本の大型タイルサイズ
-    int baseWidth = (currentLargeTileId >= 8 && currentLargeTileId <= 11) ? 4 : 2;
-    int baseHeight = 2;
+    // 回転を考慮したサイズ計算
+    int baseWidth, baseHeight;
+    if (currentLargeTileId >= 8 && currentLargeTileId <= 11) {
+        // 4x2タイル
+        if (rotation == RotationAngle::ROTATE_90 || rotation == RotationAngle::ROTATE_270) {
+            baseWidth = 2; baseHeight = 4; // 90度/270度回転で2x4になる
+        }
+        else {
+            baseWidth = 4; baseHeight = 2; // 0度/180度で4x2のまま
+        }
+    }
+    else {
+        // 2x2タイル（回転しても2x2のまま）
+        baseWidth = 2; baseHeight = 2;
+    }
 
     // 単個大型タイルのサイズ
     int tileWidth = baseWidth * estimatedTileSize;
@@ -89,12 +109,22 @@ void LargeTileTool::drawPreview(sf::RenderWindow& window,
     int totalWidth = tileWidth * brushSize;
     int totalHeight = tileHeight * brushSize;
 
-    // プレビュー矩形描画
+    // プレビュー矩形描画（半透明）
     sf::RectangleShape preview(sf::Vector2f(totalWidth, totalHeight));
     preview.setPosition(static_cast<sf::Vector2f>(snappedPos) - sf::Vector2f(totalWidth / 2, totalHeight / 2));
-    preview.setFillColor(sf::Color(255, 255, 255, 50));
+    preview.setFillColor(sf::Color(255, 255, 255, 30)); // より薄い半透明
+
+    // 回転状態に応じた枠色
+    sf::Color frameColor = sf::Color(255, 255, 0, 100); // デフォルト：黄色
+    switch (rotation) {
+    case RotationAngle::ROTATE_90:  frameColor = sf::Color(0, 255, 255, 100); break;  // シアン
+    case RotationAngle::ROTATE_180: frameColor = sf::Color(255, 0, 255, 100); break;  // マゼンタ
+    case RotationAngle::ROTATE_270: frameColor = sf::Color(255, 165, 0, 100); break;  // オレンジ
+    default: break;
+    }
+
     preview.setOutlineThickness(2.0f);
-    preview.setOutlineColor(sf::Color(255, 255, 0, 150));
+    preview.setOutlineColor(frameColor);
     window.draw(preview);
 
     // 大型タイル番号表示
@@ -106,7 +136,7 @@ void LargeTileTool::drawPreview(sf::RenderWindow& window,
 }
 
 /**
- * カーソル描画
+ * カーソル描画（回転対応）
  */
 void LargeTileTool::drawCursor(sf::RenderWindow& window,
     const sf::Vector2i& mousePos,
@@ -117,9 +147,25 @@ void LargeTileTool::drawCursor(sf::RenderWindow& window,
     float zoom = view.getZoom();
     float scaledTileSize = tileSize * zoom;
 
-    // 基本の大型タイルサイズ
-    int baseWidth = (currentLargeTileId >= 8 && currentLargeTileId <= 11) ? 4 : 2;
-    int baseHeight = 2;
+    // 現在の大型タイルの回転状態を取得
+    const LargeTile& currentTile = largeTileManager.getCurrentLargeTile();
+    RotationAngle rotation = currentTile.getCurrentRotation();
+
+    // 基本の大型タイルサイズ（回転を考慮）
+    int baseWidth, baseHeight;
+    if (currentLargeTileId >= 8 && currentLargeTileId <= 11) {
+        // 4x2タイル
+        if (rotation == RotationAngle::ROTATE_90 || rotation == RotationAngle::ROTATE_270) {
+            baseWidth = 2; baseHeight = 4; // 90度/270度回転で2x4になる
+        }
+        else {
+            baseWidth = 4; baseHeight = 2; // 0度/180度で4x2のまま
+        }
+    }
+    else {
+        // 2x2タイル（回転しても2x2のまま）
+        baseWidth = 2; baseHeight = 2;
+    }
 
     // 単個大型タイルのサイズ
     float tileWidth = baseWidth * scaledTileSize;
@@ -129,18 +175,25 @@ void LargeTileTool::drawCursor(sf::RenderWindow& window,
     float totalWidth = tileWidth * brushSize;
     float totalHeight = tileHeight * brushSize;
 
-    // **修正：実際のタイルサイズを使用**
+    // スナップ位置を計算
     int screenTileSize = static_cast<int>(tileSize * zoom);
     sf::Vector2i snappedPos = snapPosition(mousePos, view, screenTileSize, brushSize, tileSize);
 
     // 大型タイル枠描画
-    sf::RectangleShape largeTileFrame(
-        sf::Vector2f(totalWidth, totalHeight)
-    );
+    sf::RectangleShape largeTileFrame(sf::Vector2f(totalWidth, totalHeight));
     largeTileFrame.setPosition(static_cast<sf::Vector2f>(snappedPos) - sf::Vector2f(totalWidth / 2, totalHeight / 2));
     largeTileFrame.setFillColor(sf::Color::Transparent);
     largeTileFrame.setOutlineThickness(2.0f);
-    largeTileFrame.setOutlineColor(sf::Color(255, 255, 0, 200));
+
+    // 回転状態に応じて枠の色を変更
+    sf::Color frameColor = sf::Color(255, 255, 0, 200); // デフォルト：黄色
+    switch (rotation) {
+    case RotationAngle::ROTATE_90:  frameColor = sf::Color(0, 255, 255, 200); break;  // シアン
+    case RotationAngle::ROTATE_180: frameColor = sf::Color(255, 0, 255, 200); break;  // マゼンタ
+    case RotationAngle::ROTATE_270: frameColor = sf::Color(255, 165, 0, 200); break;  // オレンジ
+    default: break;
+    }
+    largeTileFrame.setOutlineColor(frameColor);
     window.draw(largeTileFrame);
 
     // 内部グリッド線描画
@@ -150,10 +203,7 @@ void LargeTileTool::drawCursor(sf::RenderWindow& window,
     // 縦線（ブラシサイズ単位）
     for (int i = 1; i < brushSize; i++) {
         float xPos = largeTileFrame.getPosition().x + i * tileWidth;
-        sf::RectangleShape vLine(sf::Vector2f(
-            lineThickness,
-            totalHeight
-        ));
+        sf::RectangleShape vLine(sf::Vector2f(lineThickness, totalHeight));
         vLine.setPosition(xPos, largeTileFrame.getPosition().y);
         vLine.setFillColor(boundaryColor);
         window.draw(vLine);
@@ -162,28 +212,29 @@ void LargeTileTool::drawCursor(sf::RenderWindow& window,
     // 横線（ブラシサイズ単位）
     for (int i = 1; i < brushSize; i++) {
         float yPos = largeTileFrame.getPosition().y + i * tileHeight;
-        sf::RectangleShape hLine(sf::Vector2f(
-            totalWidth,
-            lineThickness
-        ));
+        sf::RectangleShape hLine(sf::Vector2f(totalWidth, lineThickness));
         hLine.setPosition(largeTileFrame.getPosition().x, yPos);
         hLine.setFillColor(boundaryColor);
         window.draw(hLine);
     }
 
-    // 大型タイル番号表示
-    sf::CircleShape idMarker(6.0f);
-    idMarker.setOrigin(6.0f, 6.0f);
+    // 大型タイル番号＋回転角度表示
+    sf::CircleShape idMarker(8.0f);
+    idMarker.setOrigin(8.0f, 8.0f);
     idMarker.setPosition(static_cast<sf::Vector2f>(snappedPos));
-    idMarker.setFillColor(sf::Color(255, 0, 0, 180));
+    idMarker.setFillColor(frameColor);
     idMarker.setOutlineThickness(1.0f);
     idMarker.setOutlineColor(sf::Color::White);
     window.draw(idMarker);
+
+    // 回転角度インジケーター（中央の小さな矢印）
+    if (rotation != RotationAngle::ROTATE_0) {
+        drawRotationIndicator(window, snappedPos, rotation);
+    }
 }
 
 /**
- * **修正版**：位置を大型タイルサイズとブラシサイズに合わせて正確にスナップ
- * canvasTileSize パラメータを追加
+ * 位置を大型タイルサイズとブラシサイズに合わせて正確にスナップ
  */
 sf::Vector2i LargeTileTool::snapPosition(const sf::Vector2i& pos,
     const CanvasView& view,
@@ -191,9 +242,25 @@ sf::Vector2i LargeTileTool::snapPosition(const sf::Vector2i& pos,
     int brushSize,
     int canvasTileSize) const
 {
-    // 大型タイルの基本サイズ（キャンバスタイル単位）
-    int baseWidth = (currentLargeTileId >= 8 && currentLargeTileId <= 11) ? 4 : 2;
-    int baseHeight = 2;
+    // 現在の大型タイルの回転状態を取得
+    const LargeTile& currentTile = largeTileManager.getCurrentLargeTile();
+    RotationAngle rotation = currentTile.getCurrentRotation();
+
+    // 大型タイルの基本サイズ（回転考慮）
+    int baseWidth, baseHeight;
+    if (currentLargeTileId >= 8 && currentLargeTileId <= 11) {
+        // 4x2タイル
+        if (rotation == RotationAngle::ROTATE_90 || rotation == RotationAngle::ROTATE_270) {
+            baseWidth = 2; baseHeight = 4;
+        }
+        else {
+            baseWidth = 4; baseHeight = 2;
+        }
+    }
+    else {
+        // 2x2タイル
+        baseWidth = 2; baseHeight = 2;
+    }
 
     // 単個大型タイルのサイズ（スクリーン座標）
     int tileWidth = screenTileSize * baseWidth;
@@ -203,8 +270,7 @@ sf::Vector2i LargeTileTool::snapPosition(const sf::Vector2i& pos,
     int totalWidth = tileWidth * brushSize;
     int totalHeight = tileHeight * brushSize;
 
-    // **修正：より正確なスナップ計算**
-    // 中心点を基準にした位置調整
+    // より正確なスナップ計算
     int halfTotalWidth = totalWidth / 2;
     int halfTotalHeight = totalHeight / 2;
 
@@ -216,18 +282,34 @@ sf::Vector2i LargeTileTool::snapPosition(const sf::Vector2i& pos,
 }
 
 /**
- * **修正版**：ブラシサイズに応じて大型タイルを複数配置
+ * ブラシサイズに応じて大型タイルを複数配置
  */
 void LargeTileTool::placeLargeTiles(const sf::Vector2i& basePos,
     int brushSize,
     Canvas& canvas,
     const CanvasView& view) const
 {
-    // 基本の大型タイルサイズ
-    int baseWidth = (currentLargeTileId >= 8 && currentLargeTileId <= 11) ? 4 : 2;
-    int baseHeight = 2;
+    // 現在の大型タイルの回転状態を取得
+    const LargeTile& currentTile = largeTileManager.getCurrentLargeTile();
+    RotationAngle rotation = currentTile.getCurrentRotation();
 
-    // **修正：実際のキャンバスタイルサイズを使用**
+    // 基本の大型タイルサイズ（回転考慮）
+    int baseWidth, baseHeight;
+    if (currentLargeTileId >= 8 && currentLargeTileId <= 11) {
+        // 4x2タイル
+        if (rotation == RotationAngle::ROTATE_90 || rotation == RotationAngle::ROTATE_270) {
+            baseWidth = 2; baseHeight = 4;
+        }
+        else {
+            baseWidth = 4; baseHeight = 2;
+        }
+    }
+    else {
+        // 2x2タイル
+        baseWidth = 2; baseHeight = 2;
+    }
+
+    // 実際のキャンバスタイルサイズを使用
     int canvasTileSize = canvas.getTileSize();
     int screenTileSize = static_cast<int>(canvasTileSize * view.getZoom());
 
@@ -263,12 +345,11 @@ void LargeTileTool::placeLargeTile(const sf::Vector2i& canvasPos,
     Canvas& canvas,
     const CanvasView& view) const
 {
-    LargeTile largeTile(currentLargeTileId);
-    auto arrangement = largeTile.getArrangement();
-    auto positions = largeTile.getDrawPositions(
-        canvasPos,
-        canvas.getTileSize()
-    );
+    // グローバルのLargeTileManagerから現在の大型タイルを取得
+    const LargeTile& currentTile = largeTileManager.getCurrentLargeTile();
+
+    auto arrangement = currentTile.getArrangement(); // 回転が適用された配置を取得
+    auto positions = currentTile.getDrawPositions(canvasPos, canvas.getTileSize());
 
     for (size_t i = 0; i < arrangement.indices.size(); ++i) {
         if (i < positions.size()) {
@@ -282,4 +363,34 @@ void LargeTileTool::placeLargeTile(const sf::Vector2i& canvasPos,
             }
         }
     }
+}
+
+/**
+ * 回転インジケーターを描画
+ */
+void LargeTileTool::drawRotationIndicator(sf::RenderWindow& window,
+    const sf::Vector2i& center,
+    RotationAngle rotation) const
+{
+    float radius = 6.0f;
+    float angleRad = static_cast<float>(rotation) * M_PI / 180.0f;
+
+    sf::Vector2f arrowStart = static_cast<sf::Vector2f>(center);
+    sf::Vector2f arrowEnd(
+        center.x + radius * cos(angleRad),
+        center.y + radius * sin(angleRad)
+    );
+
+    // 矢印線
+    sf::VertexArray arrow(sf::Lines, 2);
+    arrow[0] = sf::Vertex(arrowStart, sf::Color::White);
+    arrow[1] = sf::Vertex(arrowEnd, sf::Color::White);
+    window.draw(arrow);
+
+    // 矢印の先端
+    sf::CircleShape arrowHead(1.5f);
+    arrowHead.setOrigin(1.5f, 1.5f);
+    arrowHead.setPosition(arrowEnd);
+    arrowHead.setFillColor(sf::Color::White);
+    window.draw(arrowHead);
 }

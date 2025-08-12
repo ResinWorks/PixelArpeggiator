@@ -1,6 +1,7 @@
 class Button {
 private:
     sf::RectangleShape shape;
+    sf::Text buttonText;
     sf::Vector2f position;
     sf::Vector2f size;
     std::string text;
@@ -26,9 +27,21 @@ public:
         isActiveState = active;
     }
 
+    /**
+    * ボタンの状態を更新
+    * @param mousePos マウス位置
+    */
     void update(const sf::Vector2i& mousePos) {
         sf::FloatRect bounds = shape.getGlobalBounds();
         isHovered = bounds.contains(static_cast<sf::Vector2f>(mousePos));
+
+        // ホバー時の色変更
+        if (isHovered) {
+            shape.setFillColor(sf::Color(90, 90, 90));
+        }
+        else {
+            shape.setFillColor(sf::Color(70, 70, 70));
+        }
     }
 
     bool isClicked(const sf::Vector2i& mousePos, bool mousePressed) {
@@ -65,6 +78,65 @@ public:
         buttonText.setFillColor(sf::Color::White);
         window.draw(buttonText);
     }
+
+    /**
+    * ボタンの位置を取得
+    * @return ボタンの左上角の座標
+    */
+    sf::Vector2f getPosition() const {
+        return position;
+    }
+
+    /**
+     * ボタンの中央位置を取得
+     * @return ボタンの中央座標
+     */
+    sf::Vector2f getCenterPosition() const {
+        return sf::Vector2f(
+            position.x + size.x / 2.0f,
+            position.y + size.y / 2.0f
+        );
+    }
+
+    /**
+     * ボタンのサイズを取得
+     * @return ボタンのサイズ
+     */
+    sf::Vector2f getSize() const {
+        return size;
+    }
+
+    /**
+     * ボタンの境界矩形を取得
+     * @return ボタンの境界矩形
+     */
+    sf::FloatRect getBounds() const {
+        return sf::FloatRect(position, size);
+    }
+
+    /**
+     * ボタンの位置を設定
+     * @param newPos 新しい位置
+     */
+    void setPosition(const sf::Vector2f& newPos) {
+        position = newPos;
+        shape.setPosition(position);
+        updateTextPosition();
+    }
+    /**
+    * テキストの位置をボタン中央に更新
+    */
+    void updateTextPosition() {
+        sf::FloatRect textBounds = buttonText.getLocalBounds();
+        sf::Vector2f textPos(
+            position.x + (size.x - textBounds.width) / 2.0f - textBounds.left,
+            position.y + (size.y - textBounds.height) / 2.0f - textBounds.top
+        );
+        buttonText.setPosition(textPos);
+    }
+
+
+ 
 };
 
 // 色定義（Button.cpp に追加）
