@@ -423,7 +423,9 @@ int main() {
     window.setFramerateLimit(120);
 
     sf::Font font;
-    if (!font.loadFromFile("ARIAL.TTF")) {
+    //if (!font.loadFromFile("ARIAL.TTF")) {
+    //if (!font.loadFromFile("x8y12pxTheStrongGamer.TTF")) {
+    if (!font.loadFromFile("x14y24pxHeadUpDaisy.TTF")) {
 
         std::cerr << "フォント読み込み失敗" << std::endl; 
     return -1;
