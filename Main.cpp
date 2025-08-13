@@ -635,7 +635,12 @@ void renderFrame(sf::RenderWindow& window, const sf::Font& font, PatternGrid& pa
     }
 
     patternGrid.draw(window, colorPanel.getColorSet());
-    tilePalette.draw(window, tilePalette.getAllColorPalettes());
+
+
+  //  tilePalette.draw(window, tilePalette.getAllColorPalettes());
+
+    tilePalette.drawWithGlobalColors(window, globalColorPalette.getAllColors());
+
     colorPanel.draw(window);
     largeTilePaletteOverlay.draw(window);
     globalColorPalette.draw(window);
