@@ -87,7 +87,7 @@ void handleButtonClicks(const sf::Vector2i& clickPos, UIManager& uiManager,
     LargeTileManager& largeTileManager, int& currentLargeTileId,
     int& brushSize, bool& showGrid, TilePalette& tilePalette,
     PatternGrid& patternGrid, ColorPanel& colorPanel,
-    Canvas& canvas, CanvasView& canvasView);
+    Canvas& canvas, CanvasView& canvasView, GlobalColorPalette& globalColorPalette);
 
 void handleFileOperations(const sf::Vector2i& clickPos, UIManager& uiManager,
     TilePalette& tilePalette, PatternGrid& patternGrid,
@@ -119,7 +119,8 @@ void renderFrame(sf::RenderWindow& window, const sf::Font& font, PatternGrid& pa
 void renderInfoText(sf::RenderWindow& window, const sf::Font& font, CanvasView& canvasView,
     DrawingManager& drawingManager, int currentLargeTileId,
     LargeTileManager& largeTileManager, int brushSize,
-    int selectedColorIndex, TilePalette& tilePalette, Canvas& canvas);
+    int selectedColorIndex, TilePalette& tilePalette, Canvas& canvas,
+    GlobalColorPalette& globalColorPalette);
 
 void renderToolSpecificInfo(sf::RenderWindow& window, const sf::Font& font,
     DrawingManager& drawingManager, LargeTileManager& largeTileManager,
@@ -213,7 +214,7 @@ int main() {
                 // ボタン処理
                 handleButtonClicks(clickPos, uiManager, drawingManager, largeTilePaletteOverlay,
                     largeTileManager, currentLargeTileId, brushSize, showGrid,
-                    tilePalette, patternGrid, colorPanel, canvas, canvasView);
+                    tilePalette, patternGrid, colorPanel, canvas, canvasView,globalColorPalette);
 
                 // 描画開始
                 if (canvas.containsInView(canvasView, clickPos)) {
@@ -271,7 +272,20 @@ void handleButtonClicks(const sf::Vector2i& clickPos, UIManager& uiManager,
     LargeTileManager& largeTileManager, int& currentLargeTileId,
     int& brushSize, bool& showGrid, TilePalette& tilePalette,
     PatternGrid& patternGrid, ColorPanel& colorPanel,
-    Canvas& canvas, CanvasView& canvasView) {
+    Canvas& canvas, CanvasView& canvasView, GlobalColorPalette& globalColorPalette) {
+
+
+    if (globalColorPalette.handleClick(clickPos)) {
+        // ログ出力
+        int selectedGlobalColor = globalColorPalette.getSelectedIndex();
+        sf::Color selectedColor = globalColorPalette.getSelectedColor();
+
+        // コンソールにログ出力
+        std::cout << "Global Color Palette - Selected Index: " << selectedGlobalColor
+            << " Color: RGB(" << (int)selectedColor.r << ", "
+            << (int)selectedColor.g << ", " << (int)selectedColor.b << ")" << std::endl;
+        return; // 他の処理を実行しないように早期リターン
+    }
 
     // 回転ボタン
     if (uiManager.getButton(ButtonIndex::ROTATE_BUTTON).isClicked(clickPos, true)) {
@@ -584,7 +598,7 @@ void renderFrame(sf::RenderWindow& window, const sf::Font& font, PatternGrid& pa
 
     // 情報表示
     renderInfoText(window, font, canvasView, drawingManager, currentLargeTileId,
-        largeTileManager, brushSize, selectedColorIndex, tilePalette, canvas);
+        largeTileManager, brushSize, selectedColorIndex, tilePalette, canvas,globalColorPalette);
 
     // コンポーネント描画
     if (tilePalette.getSelectedIndex() >= 0) {
@@ -623,7 +637,8 @@ void renderFrame(sf::RenderWindow& window, const sf::Font& font, PatternGrid& pa
 void renderInfoText(sf::RenderWindow& window, const sf::Font& font, CanvasView& canvasView,
     DrawingManager& drawingManager, int currentLargeTileId,
     LargeTileManager& largeTileManager, int brushSize,
-    int selectedColorIndex, TilePalette& tilePalette, Canvas& canvas) {
+    int selectedColorIndex, TilePalette& tilePalette, Canvas& canvas,
+    GlobalColorPalette& globalColorPalette) {
 
     // ズーム情報
     drawText(window, font, canvasView.getStatusString(),
@@ -675,6 +690,16 @@ void renderInfoText(sf::RenderWindow& window, const sf::Font& font, CanvasView& 
             " | Moved: " + std::string(stats.hasMoved ? "YES" : "NO");
         drawText(window, font, debugInfo, 12, sf::Vector2f(20, 100), sf::Color::Green);
     }
+
+
+    // GlobalColorPalette情報を追加
+    int globalColorIndex = globalColorPalette.getSelectedIndex();
+    sf::Color globalColor = globalColorPalette.getSelectedColor();
+    std::string globalColorInfo = "Global Color: [" + std::to_string(globalColorIndex) + "] RGB(" +
+        std::to_string((int)globalColor.r) + ", " + std::to_string((int)globalColor.g) + ", " +
+        std::to_string((int)globalColor.b) + ")";
+    drawText(window, font, globalColorInfo, 14, sf::Vector2f(20, 800), sf::Color(100, 255, 100));
+
 }
 
 /**
