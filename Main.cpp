@@ -173,9 +173,24 @@ int main() {
     tilePalette.setPosition(sf::Vector2f(1350, 20));
     globalColorPalette.setPosition(sf::Vector2f(1600, 20));
 
+    // 新システム：ColorPanelとGlobalColorPaletteの連携設定
+    colorPanel.setGlobalColorPalette(&globalColorPalette);
 
+    // デフォルトのグローバルカラーインデックスを設定（最初の3色）
+    colorPanel.setGlobalColorIndices({ 0, 1, 2 });
 
+    // テスト用：デフォルトパターンを1つ追加
+    std::vector<std::vector<int>> defaultPattern = {
+        {0, 1, 0},
+        {1, 2, 1},
+        {0, 1, 0}
+    };
+    tilePalette.addPatternWithGlobalColors(defaultPattern, { 0, 1, 2 });
 
+    // デフォルトパターンを選択
+    tilePalette.selectPattern(0);
+    colorPanel.setTarget(tilePalette.getSelectedColorSet());
+    patternGrid.setTiles(defaultPattern);
 
     // 状態変数
     int selectedColorIndex = 0;
@@ -291,7 +306,13 @@ void handleButtonClicks(const sf::Vector2i& clickPos, UIManager& uiManager,
         // ColorPanelの現在選択中の色スロットにグローバルカラーを適用
         if (tilePalette.getSelectedIndex() >= 0) {
 
-            colorPanel.setCurrentColor(selectedColor); // 現在選択中の色スロットに適用
+            // 新システム：選択されたグローバルカラーを現在の色スロットに設定
+            colorPanel.setCurrentSlotGlobalIndex(selectedGlobalColor);
+            //colorPanel.setCurrentColor(selectedColor); // 現在選択中の色スロットに適用
+
+            // TilePaletteのグローバルカラーインデックスも更新
+            auto currentIndices = colorPanel.getGlobalColorIndices();
+            tilePalette.setGlobalColorIndices(tilePalette.getSelectedIndex(), currentIndices);
 
             // タイルパレットの色セットも更新
             tilePalette.updateColorSet(tilePalette.getSelectedIndex(), colorPanel.getColorSet());
@@ -371,9 +392,21 @@ void handleButtonClicks(const sf::Vector2i& clickPos, UIManager& uiManager,
         showGrid = !showGrid;
     }
 
+    /*
     // パターン操作
     if (uiManager.getButton(ButtonIndex::ADD_PATTERN).isClicked(clickPos, true)) {
         tilePalette.addPattern(patternGrid.getTiles(), colorPanel.getColorSet());
+    }
+    */
+
+    // パターン操作
+    if (uiManager.getButton(ButtonIndex::ADD_PATTERN).isClicked(clickPos, true)) {
+        // 新システム：現在のグローバルカラーインデックスでパターンを追加
+        auto globalIndices = colorPanel.getGlobalColorIndices();
+        tilePalette.addPatternWithGlobalColors(patternGrid.getTiles(), globalIndices);
+
+        std::cout << "Added new pattern with global color indices: ["
+            << globalIndices[0] << ", " << globalIndices[1] << ", " << globalIndices[2] << "]" << std::endl;
     }
 
     if (uiManager.getButton(ButtonIndex::SAVE_CHANGES).isClicked(clickPos, true) &&
@@ -389,6 +422,7 @@ void handleButtonClicks(const sf::Vector2i& clickPos, UIManager& uiManager,
     if (!largeTilePaletteOverlay.getVisible()) {
         if (tilePalette.handleClick(clickPos)) {
             int selIdx = tilePalette.getSelectedIndex();
+            /*
             if (selIdx >= 0) {
                 colorPanel.setTarget(tilePalette.getSelectedColorSet());
                 auto flat = tilePalette.getPattern(selIdx);
@@ -397,6 +431,46 @@ void handleButtonClicks(const sf::Vector2i& clickPos, UIManager& uiManager,
                     grid[i / 3][i % 3] = flat[i];
                 }
                 patternGrid.setTiles(grid);
+            }
+            */
+
+            /*
+            if (selIdx >= 0) {
+                // 新システム：選択されたパターンのグローバルカラーインデックスをColorPanelに設定
+                auto globalIndices = tilePalette.getGlobalColorIndices(selIdx);
+                colorPanel.setGlobalColorIndices(globalIndices);
+
+                // 後方互換性：従来の色セット設定も行う
+                colorPanel.setTarget(tilePalette.getSelectedColorSet());
+                auto flat = tilePalette.getPattern(selIdx);
+                std::vector<std::vector<int>> grid(3, std::vector<int>(3));
+                for (int i = 0; i < 9; ++i) {
+                    grid[i / 3][i % 3] = flat[i];
+                }
+                patternGrid.setTiles(grid);
+
+                std::cout << "Selected pattern [" << selIdx << "] with global color indices: ["
+                    << globalIndices[0] << ", " << globalIndices[1] << ", " << globalIndices[2] << "]" << std::endl;
+            }
+            */
+            if (selIdx >= 0) {
+                // 新システム：選択されたパターンのグローバルカラーインデックスをColorPanelに設定
+                auto globalIndices = tilePalette.getGlobalColorIndices(selIdx);
+                colorPanel.setGlobalColorIndices(globalIndices);
+
+                // パターンデータをPatternGridに設定
+                auto flat = tilePalette.getPattern(selIdx);
+                std::vector<std::vector<int>> grid(3, std::vector<int>(3));
+                for (int i = 0; i < 9; ++i) {
+                    grid[i / 3][i % 3] = flat[i];
+                }
+                patternGrid.setTiles(grid);
+
+                // 後方互換性：従来の色セット設定も行う
+                colorPanel.setTarget(tilePalette.getSelectedColorSet());
+
+                std::cout << "Selected pattern [" << selIdx << "] with global color indices: ["
+                    << globalIndices[0] << ", " << globalIndices[1] << ", " << globalIndices[2] << "]" << std::endl;
             }
         }
     }
@@ -565,6 +639,7 @@ void updateGameState(const sf::Vector2i& mousePos, bool mousePressed, bool& isPa
             tilePalette.getSelectedIndex(), brushSize);
     }
 
+    /*
     // カラーパネル更新
     bool colorSliderChanged = colorPanel.updateSliders(mousePos, mousePressed);
     if (colorSliderChanged && tilePalette.getSelectedIndex() >= 0) {
@@ -585,6 +660,26 @@ void updateGameState(const sf::Vector2i& mousePos, bool mousePressed, bool& isPa
             << (int)newColor.b << ")" << std::endl;
 
     }
+    */
+    bool colorSliderChanged = colorPanel.updateSliders(mousePos, mousePressed);
+    if (colorSliderChanged && tilePalette.getSelectedIndex() >= 0) {
+        tilePalette.updateColorSet(tilePalette.getSelectedIndex(), colorPanel.getColorSet());
+        canvas.setDirty(true);
+
+        // RGBスライダーで色が変更された場合の処理
+        // 新システム：現在編集中の色をグローバルカラーパレットに反映
+        colorPanel.updateGlobalColorFromCurrent();
+
+        // ログ出力（グローバルカラーインデックス情報を追加）
+        int currentColorIndex = colorPanel.getCurrentColorIndex();
+        int globalColorIndex = colorPanel.getCurrentSlotGlobalIndex();
+        sf::Color newColor = colorPanel.getColorSet()[currentColorIndex];
+
+        std::cout << "RGB slider changed - Updated Global Color ["
+            << globalColorIndex << "] to RGB("
+            << (int)newColor.r << ", " << (int)newColor.g << ", "
+            << (int)newColor.b << ") via color slot [" << currentColorIndex << "]" << std::endl;
+    }
 
     // マウス押下時の処理
     if (mousePressed) {
@@ -594,6 +689,7 @@ void updateGameState(const sf::Vector2i& mousePos, bool mousePressed, bool& isPa
             patternChanged = true;
         }
     }
+
 
     // スライダー更新
     sf::Color oldTileGridColor = tileGridColor;
@@ -638,8 +734,17 @@ void renderFrame(sf::RenderWindow& window, const sf::Font& font, PatternGrid& pa
         colorPanel.setTarget(tilePalette.getSelectedColorSet());
     }
 
-    patternGrid.draw(window, colorPanel.getColorSet());
-    //patternGrid.draw(window, colorPanel.getColorSet());
+   // patternGrid.draw(window, colorPanel.getColorSet());
+    // PatternGrid描画を修正：グローバルカラーを使用
+    if (tilePalette.getSelectedIndex() >= 0) {
+        auto globalIndices = colorPanel.getGlobalColorIndices();
+        patternGrid.drawWithGlobalColors(window, globalColorPalette.getAllColors(), globalIndices);
+    }
+    else {
+        // タイルが選択されていない場合はデフォルト
+        patternGrid.drawWithGlobalColors(window, globalColorPalette.getAllColors(), { 0, 1, 2 });
+    }
+
 
   //  tilePalette.draw(window, tilePalette.getAllColorPalettes());
 

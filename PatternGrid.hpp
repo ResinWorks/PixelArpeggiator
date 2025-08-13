@@ -26,6 +26,23 @@ public:
         this->position = pos;
     }
 
+    // 新しいメソッド：グローバルカラーから3色を取得して描画
+    void drawWithGlobalColors(sf::RenderWindow& window,
+        const std::array<sf::Color, 16>& globalColors,
+        const std::array<int, 3>& globalIndices) {
+        std::array<sf::Color, 3> colorSet;
+        for (int i = 0; i < 3; ++i) {
+            int globalIndex = globalIndices[i];
+            if (globalIndex >= 0 && globalIndex < 16) {
+                colorSet[i] = globalColors[globalIndex];
+            }
+            else {
+                colorSet[i] = sf::Color::Black; // フォールバック
+            }
+        }
+        draw(window, colorSet);
+    }
+
 private:
     int rows, cols, tileSize;
     std::vector<std::vector<int>> tiles; // 色インデックス（0〜2）
