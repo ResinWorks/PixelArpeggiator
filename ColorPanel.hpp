@@ -7,6 +7,7 @@
 
 class ColorPanel {
 public:
+
     ColorPanel(const sf::Font& font);
 
     void draw(sf::RenderWindow& window);
@@ -24,6 +25,11 @@ public:
 		return point.x >= panelPos.x && point.x <= panelPos.x + 120 &&
 			   point.y >= panelPos.y && point.y <= panelPos.y + 150;
 	}
+
+    // 現在の色インデックスを取得・設定
+    int getCurrentColorIndex() const { return currentColorIndex; }
+    void setColor(int index, const sf::Color& color);
+    void setCurrentColor(const sf::Color& color) { setColor(currentColorIndex, color); }
 
 private:
     /*
@@ -47,5 +53,7 @@ private:
 
     void drawSliders(sf::RenderWindow& window);
     void drawColorButtons(sf::RenderWindow& window);
+
+
 
 };

@@ -106,7 +106,7 @@ void updateGameState(const sf::Vector2i& mousePos, bool mousePressed, bool& isPa
     Canvas& canvas, TilePalette& tilePalette, ColorPanel& colorPanel,
     PatternGrid& patternGrid, UIManager& uiManager, float& gridSpacing,
     float& gridShrink, sf::Color& tileGridColor, int& selectedColorIndex,
-    bool& patternChanged, int brushSize);
+    bool& patternChanged, int brushSize, GlobalColorPalette& globalColorPalette);
 
 void renderFrame(sf::RenderWindow& window, const sf::Font& font, PatternGrid& patternGrid,
     TilePalette& tilePalette, ColorPanel& colorPanel, Canvas& canvas,
@@ -250,7 +250,7 @@ int main() {
         updateGameState(mousePos, mousePressed, isPanning, lastPanPos, canvasView,
             drawingManager, canvas, tilePalette, colorPanel, patternGrid,
             uiManager, gridSpacing, gridShrink, tileGridColor,
-            selectedColorIndex, patternChanged, brushSize);
+            selectedColorIndex, patternChanged, brushSize,globalColorPalette);
 
         // 描画処理
         renderFrame(window, font, patternGrid, tilePalette, colorPanel, canvas, canvasView,
@@ -284,6 +284,21 @@ void handleButtonClicks(const sf::Vector2i& clickPos, UIManager& uiManager,
         std::cout << "Global Color Palette - Selected Index: " << selectedGlobalColor
             << " Color: RGB(" << (int)selectedColor.r << ", "
             << (int)selectedColor.g << ", " << (int)selectedColor.b << ")" << std::endl;
+        // ColorPanelの現在選択中の色スロットにグローバルカラーを適用
+        if (tilePalette.getSelectedIndex() >= 0) {
+
+            colorPanel.setCurrentColor(selectedColor); // 現在選択中の色スロットに適用
+
+            // タイルパレットの色セットも更新
+            tilePalette.updateColorSet(tilePalette.getSelectedIndex(), colorPanel.getColorSet());
+            canvas.setDirty(true);
+
+            std::cout << "Applied global color to current color slot in pattern" << std::endl;
+        }
+        else {
+            std::cout << "No tile pattern selected - global color not applied" << std::endl;
+        }
+
         return; // 他の処理を実行しないように早期リターン
     }
 
@@ -531,7 +546,7 @@ void updateGameState(const sf::Vector2i& mousePos, bool mousePressed, bool& isPa
     Canvas& canvas, TilePalette& tilePalette, ColorPanel& colorPanel,
     PatternGrid& patternGrid, UIManager& uiManager, float& gridSpacing,
     float& gridShrink, sf::Color& tileGridColor, int& selectedColorIndex,
-    bool& patternChanged, int brushSize) {
+    bool& patternChanged, int brushSize, GlobalColorPalette& globalColorPalette) {
 
     // パン操作更新
     if (isPanning && sf::Mouse::isButtonPressed(sf::Mouse::Middle)) {
@@ -551,6 +566,20 @@ void updateGameState(const sf::Vector2i& mousePos, bool mousePressed, bool& isPa
     if (colorSliderChanged && tilePalette.getSelectedIndex() >= 0) {
         tilePalette.updateColorSet(tilePalette.getSelectedIndex(), colorPanel.getColorSet());
         canvas.setDirty(true);
+
+        // RGBスライダーで色が変更された場合、選択中のグローバルカラーに反映
+        int currentColorIndex = colorPanel.getCurrentColorIndex();
+        sf::Color newColor = colorPanel.getColorSet()[currentColorIndex];
+
+        // 選択中のグローバルカラーパレットに新しい色を設定
+        globalColorPalette.setColor(globalColorPalette.getSelectedIndex(), newColor);
+
+        // ログ出力
+        std::cout << "RGB slider changed - Updated Global Color ["
+            << globalColorPalette.getSelectedIndex() << "] to RGB("
+            << (int)newColor.r << ", " << (int)newColor.g << ", "
+            << (int)newColor.b << ")" << std::endl;
+
     }
 
     // マウス押下時の処理

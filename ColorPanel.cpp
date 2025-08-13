@@ -6,9 +6,17 @@
 
 ColorPanel::ColorPanel(const sf::Font& font) : font(font) {}
 
+void ColorPanel::setColor(int index, const sf::Color& color) {
+    if (currentColors && index >= 0 && index < 3) {
+        (*currentColors)[index] = color;
+    }
+}
+
+
 void ColorPanel::setTarget(std::array<sf::Color, 3>& colorSet) {
     currentColors = &colorSet;
 }
+
 
 void ColorPanel::draw(sf::RenderWindow& window) {
     if (!currentColors) return;
@@ -107,4 +115,6 @@ void ColorPanel::drawSliders(sf::RenderWindow& window) {
         ss << labels[i] << ": " << values[i];
         drawText(window, font, ss.str(), 14, sf::Vector2f(panelPos.x, y - 18), sf::Color::White);
     }
+
+
 }
