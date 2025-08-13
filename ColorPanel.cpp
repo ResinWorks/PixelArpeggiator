@@ -1,22 +1,15 @@
 // ColorPanel.cpp
 #include "ColorPanel.hpp"
 #include "UIHelper.hpp"
+#include "GlobalColorPalette.hpp"
 #include <algorithm>
 #include <sstream>
 
 ColorPanel::ColorPanel(const sf::Font& font) : font(font) {}
 
-void ColorPanel::setColor(int index, const sf::Color& color) {
-    if (currentColors && index >= 0 && index < 3) {
-        (*currentColors)[index] = color;
-    }
-}
-
-
 void ColorPanel::setTarget(std::array<sf::Color, 3>& colorSet) {
     currentColors = &colorSet;
 }
-
 
 void ColorPanel::draw(sf::RenderWindow& window) {
     if (!currentColors) return;
@@ -41,7 +34,6 @@ bool ColorPanel::handleEvent(const sf::Vector2i& mousePos, bool mousePressed, in
 
 bool ColorPanel::updateSliders(const sf::Vector2i& mousePos, bool mousePressed) {
     if (!currentColors) return false;
-
     bool colorChanged = false;
     sf::Color& col = (*currentColors)[currentColorIndex];
     int oldChannels[3] = { col.r, col.g, col.b };
@@ -115,6 +107,49 @@ void ColorPanel::drawSliders(sf::RenderWindow& window) {
         ss << labels[i] << ": " << values[i];
         drawText(window, font, ss.str(), 14, sf::Vector2f(panelPos.x, y - 18), sf::Color::White);
     }
+}
 
+// 新しいメソッドの実装
 
+void ColorPanel::setColor(int index, const sf::Color& color) {
+    if (currentColors && index >= 0 && index < 3) {
+        (*currentColors)[index] = color;
+    }
+}
+
+void ColorPanel::setGlobalColorPalette(GlobalColorPalette* globalPalette) {
+    globalColorPalette = globalPalette;
+    updateColorsFromGlobal(); // 設定時に色を更新
+}
+
+void ColorPanel::setGlobalColorIndices(const std::array<int, 3>& indices) {
+    globalColorIndices = indices;
+    updateColorsFromGlobal(); // グローバルカラーから実際の色を更新
+}
+
+void ColorPanel::updateColorsFromGlobal() {
+    if (globalColorPalette && currentColors) {
+        for (int i = 0; i < 3; ++i) {
+            int globalIndex = globalColorIndices[i];
+            if (globalIndex >= 0 && globalIndex < 16) {
+                (*currentColors)[i] = globalColorPalette->getColor(globalIndex);
+            }
+        }
+    }
+}
+
+void ColorPanel::updateGlobalColorFromCurrent() {
+    if (globalColorPalette && currentColors) {
+        int globalIndex = globalColorIndices[currentColorIndex];
+        if (globalIndex >= 0 && globalIndex < 16) {
+            globalColorPalette->setColor(globalIndex, (*currentColors)[currentColorIndex]);
+        }
+    }
+}
+
+void ColorPanel::setCurrentSlotGlobalIndex(int globalIndex) {
+    if (globalIndex >= 0 && globalIndex < 16) {
+        globalColorIndices[currentColorIndex] = globalIndex;
+        updateColorsFromGlobal(); // 色を更新
+    }
 }

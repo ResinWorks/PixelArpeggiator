@@ -173,6 +173,10 @@ int main() {
     tilePalette.setPosition(sf::Vector2f(1350, 20));
     globalColorPalette.setPosition(sf::Vector2f(1600, 20));
 
+
+
+
+
     // 状態変数
     int selectedColorIndex = 0;
     int brushSize = 1;
@@ -635,7 +639,7 @@ void renderFrame(sf::RenderWindow& window, const sf::Font& font, PatternGrid& pa
     }
 
     patternGrid.draw(window, colorPanel.getColorSet());
-
+    //patternGrid.draw(window, colorPanel.getColorSet());
 
   //  tilePalette.draw(window, tilePalette.getAllColorPalettes());
 

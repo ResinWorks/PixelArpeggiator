@@ -10,7 +10,7 @@ public:
     PatternGrid(int rows, int cols, int tileSize);
 
     void draw(sf::RenderWindow& window, const std::array<sf::Color, 3>& colorSet);
-   bool handleClick(const sf::Vector2i& mousePos, int selectedColor);
+    bool handleClick(const sf::Vector2i& mousePos, int selectedColor);
 
     const std::vector<std::vector<int>>& getTiles() const {
         return tiles;

@@ -1,9 +1,9 @@
-// PatternGrid.cpp
+Ôªø// PatternGrid.cpp
 #include "PatternGrid.hpp"
 
 PatternGrid::PatternGrid(int rows, int cols, int tileSize)
     : rows(rows), cols(cols), tileSize(tileSize), position(20.f, 20.f) {
-    tiles.resize(rows, std::vector<int>(cols, 0)); // èâä˙íl0
+    tiles.resize(rows, std::vector<int>(cols, 0)); // ¬è‚Ä∞≈†√∫‚Äôl0
 
 }
 
@@ -11,7 +11,7 @@ PatternGrid::PatternGrid(int rows, int cols, int tileSize)
 void PatternGrid::draw(sf::RenderWindow& window, const std::array<sf::Color, 3>& colorSet) {
     for (int y = 0; y < rows; ++y) {
         for (int x = 0; x < cols; ++x) {
-            sf::RectangleShape rect(sf::Vector2f(tileSize - 2, tileSize - 2)); // 2pxåÑä‘
+            sf::RectangleShape rect(sf::Vector2f(tileSize - 2, tileSize - 2)); // 2px≈í‚Äû≈†√î
             rect.setPosition(position.x + x * tileSize, position.y + y * tileSize);
             rect.setFillColor(colorSet[tiles[y][x]]);
             window.draw(rect);
