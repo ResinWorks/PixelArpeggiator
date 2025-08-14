@@ -89,11 +89,14 @@ void handleButtonClicks(const sf::Vector2i& clickPos, UIManager& uiManager,
     PatternGrid& patternGrid, ColorPanel& colorPanel,
     Canvas& canvas, CanvasView& canvasView, GlobalColorPalette& globalColorPalette);
 
+//void handleFileOperations(const sf::Vector2i& clickPos, UIManager& uiManager,    TilePalette& tilePalette, PatternGrid& patternGrid,    ColorPanel& colorPanel, Canvas& canvas);
 void handleFileOperations(const sf::Vector2i& clickPos, UIManager& uiManager,
     TilePalette& tilePalette, PatternGrid& patternGrid,
-    ColorPanel& colorPanel, Canvas& canvas);
+    ColorPanel& colorPanel, Canvas& canvas, GlobalColorPalette& globalColorPalette);
 
-void exportImage(TilePalette& tilePalette, Canvas& canvas, const std::string& format);
+//void exportImage(TilePalette& tilePalette, Canvas& canvas, const std::string& format);
+void exportImage(TilePalette& tilePalette, Canvas& canvas, const std::string& format,
+    GlobalColorPalette& globalColorPalette);
 
 void handleKeyboardInput(const sf::Event& event, LargeTileManager& largeTileManager,
     int& currentLargeTileId, DrawingManager& drawingManager);
@@ -416,7 +419,9 @@ void handleButtonClicks(const sf::Vector2i& clickPos, UIManager& uiManager,
     }
 
     // ファイル操作
-    handleFileOperations(clickPos, uiManager, tilePalette, patternGrid, colorPanel, canvas);
+   // handleFileOperations(clickPos, uiManager, tilePalette, patternGrid, colorPanel, canvas);
+    handleFileOperations(clickPos, uiManager, tilePalette, patternGrid, colorPanel, canvas, globalColorPalette);
+
 
     // 通常のTilePalette処理（オーバーレイ非表示時のみ）
     if (!largeTilePaletteOverlay.getVisible()) {
@@ -479,6 +484,8 @@ void handleButtonClicks(const sf::Vector2i& clickPos, UIManager& uiManager,
 /**
  * ファイル操作処理
  */
+
+/*
 void handleFileOperations(const sf::Vector2i& clickPos, UIManager& uiManager,
     TilePalette& tilePalette, PatternGrid& patternGrid,
     ColorPanel& colorPanel, Canvas& canvas) {
@@ -526,10 +533,61 @@ void handleFileOperations(const sf::Vector2i& clickPos, UIManager& uiManager,
         exportImage(tilePalette, canvas, "jpg");
     }
 }
+*/
+
+void handleFileOperations(const sf::Vector2i& clickPos, UIManager& uiManager,
+    TilePalette& tilePalette, PatternGrid& patternGrid,
+    ColorPanel& colorPanel, Canvas& canvas, GlobalColorPalette& globalColorPalette) {
+
+    // プロジェクト保存
+    if (uiManager.getButton(ButtonIndex::SAVE_FILE).isClicked(clickPos, true)) {
+        const char* savePath = tinyfd_saveFileDialog("Save Project", "project.dat", 0, nullptr, nullptr);
+        if (savePath) {
+            saveProject(savePath, tilePalette.getAllPatterns(),
+                tilePalette.getAllColorPalettes(), canvas.getTileIndices());
+        }
+    }
+
+    // プロジェクト読み込み
+    if (uiManager.getButton(ButtonIndex::LOAD_FILE).isClicked(clickPos, true)) {
+        const char* loadPath = tinyfd_openFileDialog("Open Project", "", 0, nullptr, nullptr, 0);
+        if (loadPath) {
+            std::vector<std::vector<int>> patterns;
+            std::vector<std::array<sf::Color, 3>> colorSets;
+            std::vector<std::vector<int>> tileData;
+
+            if (loadProject(loadPath, patterns, colorSets, tileData)) {
+                tilePalette.loadPatterns(patterns, colorSets);
+                canvas.setTileIndices(tileData);
+                tilePalette.selectPattern(0);
+                colorPanel.setTarget(colorSets[0]);
+
+                auto flat = tilePalette.getPattern(0);
+                std::vector<std::vector<int>> grid(3, std::vector<int>(3));
+                for (int i = 0; i < 9; ++i) {
+                    grid[i / 3][i % 3] = flat[i];
+                }
+                patternGrid.setTiles(grid);
+            }
+        }
+    }
+
+    // PNG出力（グローバルカラー対応）
+    if (uiManager.getButton(ButtonIndex::EXPORT_PNG).isClicked(clickPos, true)) {
+        exportImage(tilePalette, canvas, "png", globalColorPalette);
+    }
+
+    // JPG出力（グローバルカラー対応）
+    if (uiManager.getButton(ButtonIndex::EXPORT_JPG).isClicked(clickPos, true)) {
+        exportImage(tilePalette, canvas, "jpg", globalColorPalette);
+    }
+}
+
 
 /**
  * 画像出力処理
  */
+/*
 void exportImage(TilePalette& tilePalette, Canvas& canvas, const std::string& format) {
     std::string defaultName = ImageExportHelper::generateDefaultFilename(format);
     std::string savePath = ImageExportHelper::showSaveDialog(
@@ -565,6 +623,59 @@ void exportImage(TilePalette& tilePalette, Canvas& canvas, const std::string& fo
         const char* type = success ? "info" : "error";
 
         tinyfd_messageBox(success ? "Export Complete" : "Export Failed", message, type, "ok", 1);
+    }
+}
+*/
+
+void exportImage(TilePalette& tilePalette, Canvas& canvas, const std::string& format,
+    GlobalColorPalette& globalColorPalette) {
+    std::string defaultName = ImageExportHelper::generateDefaultFilename(format);
+    std::string savePath = ImageExportHelper::showSaveDialog(
+        "Export " + format + " Image", defaultName, format
+    );
+
+    if (!savePath.empty()) {
+        // 拡張子チェック・追加
+        std::string expectedExt = "." + format;
+        if (format == "jpg") {
+            if (savePath.substr(std::max(0, (int)savePath.length() - 4)) != ".jpg" &&
+                savePath.substr(std::max(0, (int)savePath.length() - 5)) != ".jpeg") {
+                savePath += ".jpg";
+            }
+        }
+        else {
+            if (savePath.substr(std::max(0, (int)savePath.length() - 4)) != expectedExt) {
+                savePath += expectedExt;
+            }
+        }
+
+        // グローバルカラーインデックス配列を取得
+        std::vector<std::array<int, 3>> allGlobalColorIndices;
+        int patternCount = tilePalette.getPatternCount();
+        for (int i = 0; i < patternCount; ++i) {
+            allGlobalColorIndices.push_back(tilePalette.getGlobalColorIndices(i));
+        }
+
+        // 新しいグローバルカラー対応の出力メソッドを使用
+        bool success = canvas.exportToImageWithGlobalColors(
+            savePath,
+            tilePalette.getAllPatterns(),
+            allGlobalColorIndices,
+            globalColorPalette.getAllColors(),
+            false, // グリッド線は出力しない
+            0.0f, 1.0f
+        );
+
+        const char* message = success ?
+            ("Image exported successfully:\n" + savePath).c_str() :
+            "Failed to export image.";
+        const char* type = success ? "info" : "error";
+
+        tinyfd_messageBox(success ? "Export Complete" : "Export Failed", message, type, "ok", 1);
+
+        if (success) {
+            std::cout << "Image exported with global color system: " << savePath << std::endl;
+        }
     }
 }
 
