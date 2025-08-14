@@ -715,6 +715,8 @@ void updateGameState(const sf::Vector2i& mousePos, bool mousePressed, bool& isPa
 /**
  * フレーム描画
  */
+
+/*
 void renderFrame(sf::RenderWindow& window, const sf::Font& font, PatternGrid& patternGrid,
     TilePalette& tilePalette, ColorPanel& colorPanel, Canvas& canvas,
     CanvasView& canvasView, LargeTilePaletteOverlay& largeTilePaletteOverlay,
@@ -773,6 +775,73 @@ void renderFrame(sf::RenderWindow& window, const sf::Font& font, PatternGrid& pa
 
     window.display();
 }
+*/
+
+void renderFrame(sf::RenderWindow& window, const sf::Font& font, PatternGrid& patternGrid,
+    TilePalette& tilePalette, ColorPanel& colorPanel, Canvas& canvas,
+    CanvasView& canvasView, LargeTilePaletteOverlay& largeTilePaletteOverlay,
+    DrawingManager& drawingManager, UIManager& uiManager, const sf::Vector2i& mousePos,
+    int selectedColorIndex, int brushSize, bool showGrid, float gridSpacing,
+    float gridShrink, const sf::Color& tileGridColor, int currentLargeTileId,
+    LargeTileManager& largeTileManager, GlobalColorPalette& globalColorPalette) {
+
+    window.clear(sf::Color(30, 30, 30));
+
+    // 情報表示
+    renderInfoText(window, font, canvasView, drawingManager, currentLargeTileId,
+        largeTileManager, brushSize, selectedColorIndex, tilePalette, canvas, globalColorPalette);
+
+    // コンポーネント描画
+    if (tilePalette.getSelectedIndex() >= 0) {
+        colorPanel.setTarget(tilePalette.getSelectedColorSet());
+    }
+
+    // PatternGrid描画（グローバルカラー使用）
+    if (tilePalette.getSelectedIndex() >= 0) {
+        auto globalIndices = colorPanel.getGlobalColorIndices();
+        patternGrid.drawWithGlobalColors(window, globalColorPalette.getAllColors(), globalIndices);
+    }
+    else {
+        // タイルが選択されていない場合はデフォルト
+        patternGrid.drawWithGlobalColors(window, globalColorPalette.getAllColors(), { 0, 1, 2 });
+    }
+
+    // TilePalette描画（グローバルカラー使用）
+    tilePalette.drawWithGlobalColors(window, globalColorPalette.getAllColors());
+
+    colorPanel.draw(window);
+    largeTilePaletteOverlay.draw(window);
+    globalColorPalette.draw(window);
+
+    // キャンバス描画（グローバルカラー使用）
+    // TilePaletteからグローバルカラーインデックス配列を取得
+    std::vector<std::array<int, 3>> allGlobalColorIndices;
+    int patternCount = tilePalette.getPatternCount();
+    for (int i = 0; i < patternCount; ++i) {
+        allGlobalColorIndices.push_back(tilePalette.getGlobalColorIndices(i));
+    }
+
+    // 新しいグローバルカラー対応メソッドを使用
+    canvas.drawWithViewAndGlobalColors(window, canvasView,
+        tilePalette.getAllPatterns(),
+        allGlobalColorIndices,
+        globalColorPalette.getAllColors(),
+        showGrid, gridSpacing, gridShrink);
+
+    // UI描画
+    uiManager.drawButtons(window, font, drawingManager.getCurrentToolType(), brushSize,
+        largeTilePaletteOverlay.getVisible(), largeTileManager.getCurrentRotationDegrees());
+    uiManager.drawSliders(window, gridSpacing, gridShrink, tileGridColor);
+
+    // カーソル＆プレビュー描画
+    if (canvas.containsInView(canvasView, mousePos)) {
+        drawingManager.drawCursor(window, mousePos, canvasView, brushSize, canvas.getTileSize());
+        drawingManager.drawPreview(window, mousePos, canvasView, brushSize);
+    }
+
+    window.display();
+}
+
 
 /**
  * 情報テキスト描画

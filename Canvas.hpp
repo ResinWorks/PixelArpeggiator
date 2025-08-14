@@ -104,6 +104,33 @@ public:
 	sf::Vector2i screenToTileIndex(const CanvasView& view, const sf::Vector2i& screenPos) const;
 
 
+	// ===== 新しいメソッド：グローバルカラーシステム対応 =====
+	void drawWithViewAndGlobalColors(sf::RenderWindow& window,
+		const CanvasView& view,
+		const std::vector<std::vector<int>>& patterns,
+		const std::vector<std::array<int, 3>>& globalColorIndices,
+		const std::array<sf::Color, 16>& globalColors,
+		bool showGrid = false,
+		float spacing = 0.5f,
+		float shrink = 1.0f);
+
+	void drawWithGlobalColors(sf::RenderWindow& window,
+		const std::vector<std::vector<int>>& patterns,
+		const std::vector<std::array<int, 3>>& globalColorIndices,
+		const std::array<sf::Color, 16>& globalColors,
+		bool showGrid = false,
+		float spacing = 0.5f,
+		float shrink = 1.0f);
+
+	bool exportToImageWithGlobalColors(const std::string& filename,
+		const std::vector<std::vector<int>>& patterns,
+		const std::vector<std::array<int, 3>>& globalColorIndices,
+		const std::array<sf::Color, 16>& globalColors,
+		bool showGrid = false,
+		float spacing = 0.5f,
+		float shrink = 1.0f);
+
+
 	/**
 	 * キャンバスを画像ファイルとして出力
 	 * @param filename 出力ファイル名（拡張子込み）
@@ -205,5 +232,17 @@ private:
 		const std::vector<std::array<sf::Color, 3>>& colorPalettes,
 		bool showGrid, float spacing, float shrink);
 	*/
+
+	// 新しいプライベートメソッド：グローバルカラー対応
+	void renderToTextureWithGlobalColors(const std::vector<std::vector<int>>& patterns,
+		const std::vector<std::array<int, 3>>& globalColorIndices,
+		const std::array<sf::Color, 16>& globalColors,
+		bool showGrid, float spacing, float shrink);
+
+	void renderToOutputTextureWithGlobalColors(sf::RenderTexture& outputTexture,
+		const std::vector<std::vector<int>>& patterns,
+		const std::vector<std::array<int, 3>>& globalColorIndices,
+		const std::array<sf::Color, 16>& globalColors,
+		bool showGrid, float spacing, float shrink, float scale = 1.0f);
 
 };
