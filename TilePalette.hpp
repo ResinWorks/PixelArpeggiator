@@ -358,4 +358,12 @@ public:
         
         selectedIndex = -1;
     }
+
+
+    void clearPatterns() {
+        patterns.clear();
+        colorPalettes.clear();
+        globalColorIndices.clear();
+        selectedIndex = -1;
+    }
 };

@@ -535,6 +535,7 @@ void handleFileOperations(const sf::Vector2i& clickPos, UIManager& uiManager,
 }
 */
 
+/*
 void handleFileOperations(const sf::Vector2i& clickPos, UIManager& uiManager,
     TilePalette& tilePalette, PatternGrid& patternGrid,
     ColorPanel& colorPanel, Canvas& canvas, GlobalColorPalette& globalColorPalette) {
@@ -582,7 +583,133 @@ void handleFileOperations(const sf::Vector2i& clickPos, UIManager& uiManager,
         exportImage(tilePalette, canvas, "jpg", globalColorPalette);
     }
 }
+*/
+void handleFileOperations(const sf::Vector2i& clickPos, UIManager& uiManager,
+    TilePalette& tilePalette, PatternGrid& patternGrid,
+    ColorPanel& colorPanel, Canvas& canvas, GlobalColorPalette& globalColorPalette) {
 
+    // プロジェクト保存（グローバルカラー形式）
+    if (uiManager.getButton(ButtonIndex::SAVE_FILE).isClicked(clickPos, true)) {
+        const char* savePath = tinyfd_saveFileDialog("Save Project", "project.dat", 0, nullptr, nullptr);
+        if (savePath) {
+            // グローバルカラーインデックス配列を取得
+            std::vector<std::array<int, 3>> allGlobalColorIndices;
+            int patternCount = tilePalette.getPatternCount();
+            for (int i = 0; i < patternCount; ++i) {
+                allGlobalColorIndices.push_back(tilePalette.getGlobalColorIndices(i));
+            }
+
+            // 新しいグローバルカラー対応セーブ関数を使用
+            saveProjectWithGlobalColors(savePath,
+                tilePalette.getAllPatterns(),
+                allGlobalColorIndices,
+                globalColorPalette.getAllColors(),
+                canvas.getTileIndices());
+
+            std::cout << "グローバルカラー形式で保存完了: " << savePath << std::endl;
+        }
+    }
+
+    // プロジェクト読み込み（新旧形式自動判別）
+    if (uiManager.getButton(ButtonIndex::LOAD_FILE).isClicked(clickPos, true)) {
+        const char* loadPath = tinyfd_openFileDialog("Open Project", "", 0, nullptr, nullptr, 0);
+        if (loadPath) {
+            std::vector<std::vector<int>> patterns;
+            std::vector<std::array<sf::Color, 3>> colorSets;
+            std::vector<std::array<int, 3>> globalColorIndices;
+            std::array<sf::Color, 16> globalColors;
+            std::vector<std::vector<int>> tileData;
+            bool isGlobalColorFormat;
+
+            // 統合ロード関数を使用（新旧形式自動判別）
+            if (loadProjectAuto(loadPath, patterns, colorSets, globalColorIndices,
+                globalColors, tileData, isGlobalColorFormat)) {
+
+                if (isGlobalColorFormat) {
+                    // 新形式（グローバルカラー）の場合
+                    std::cout << "グローバルカラー形式のプロジェクトを読み込み中..." << std::endl;
+
+                    // グローバルカラーパレットを復元
+                    for (int i = 0; i < 16; ++i) {
+                        globalColorPalette.setColor(i, globalColors[i]);
+                    }
+
+                    // 現在のパターンをクリア
+                    // TilePaletteに新しいパターンを設定する前に、必要に応じてクリア処理を行う
+                    // tilePalette.clear(); // clearメソッドが必要な場合は後で追加
+
+                    // パターンをグローバルカラーインデックス付きで復元
+                    for (size_t i = 0; i < patterns.size(); ++i) {
+                        // パターンを2次元配列に変換
+                        std::vector<std::vector<int>> grid(3, std::vector<int>(3));
+                        for (int j = 0; j < 9; ++j) {
+                            grid[j / 3][j % 3] = patterns[i][j];
+                        }
+
+                        // グローバルカラーインデックス付きでパターンを追加
+                        tilePalette.addPatternWithGlobalColors(grid, globalColorIndices[i]);
+                    }
+
+                    // キャンバスを復元
+                    canvas.setTileIndices(tileData);
+
+                    // 最初のパターンを選択
+                    if (!patterns.empty()) {
+                        tilePalette.selectPattern(0);
+                        auto firstGlobalIndices = tilePalette.getGlobalColorIndices(0);
+                        colorPanel.setGlobalColorIndices(firstGlobalIndices);
+
+                        // PatternGridにパターンを設定
+                        std::vector<std::vector<int>> grid(3, std::vector<int>(3));
+                        for (int i = 0; i < 9; ++i) {
+                            grid[i / 3][i % 3] = patterns[0][i];
+                        }
+                        patternGrid.setTiles(grid);
+                    }
+
+                    std::cout << "グローバルカラープロジェクトの読み込み完了" << std::endl;
+
+                }
+                else {
+                    // 旧形式（個別カラーセット）の場合
+                    std::cout << "旧形式のプロジェクトを読み込み中..." << std::endl;
+
+                    // 旧形式として読み込み（後方互換性）
+                    tilePalette.loadPatterns(patterns, colorSets);
+                    canvas.setTileIndices(tileData);
+
+                    // 最初のパターンを選択
+                    if (!patterns.empty()) {
+                        tilePalette.selectPattern(0);
+                        colorPanel.setTarget(tilePalette.getSelectedColorSet());
+
+                        std::vector<std::vector<int>> grid(3, std::vector<int>(3));
+                        for (int i = 0; i < 9; ++i) {
+                            grid[i / 3][i % 3] = patterns[0][i];
+                        }
+                        patternGrid.setTiles(grid);
+                    }
+
+                    std::cout << "旧形式プロジェクトの読み込み完了（個別カラーセット）" << std::endl;
+                }
+
+            }
+            else {
+                std::cerr << "プロジェクトの読み込みに失敗しました" << std::endl;
+            }
+        }
+    }
+
+    // PNG出力（グローバルカラー対応）
+    if (uiManager.getButton(ButtonIndex::EXPORT_PNG).isClicked(clickPos, true)) {
+        exportImage(tilePalette, canvas, "png", globalColorPalette);
+    }
+
+    // JPG出力（グローバルカラー対応）
+    if (uiManager.getButton(ButtonIndex::EXPORT_JPG).isClicked(clickPos, true)) {
+        exportImage(tilePalette, canvas, "jpg", globalColorPalette);
+    }
+}
 
 /**
  * 画像出力処理
