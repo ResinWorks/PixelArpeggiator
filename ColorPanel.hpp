@@ -75,4 +75,6 @@ private:
 
     void drawSliders(sf::RenderWindow& window);
     void drawColorButtons(sf::RenderWindow& window);
+    // 新しく追加：透明色ボタンの描画
+    void drawTransparentButton(sf::RenderWindow& window, float x, float y);
 };

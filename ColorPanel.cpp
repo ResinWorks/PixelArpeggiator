@@ -4,6 +4,7 @@
 #include "GlobalColorPalette.hpp"
 #include <algorithm>
 #include <sstream>
+#include <iostream>
 
 ColorPanel::ColorPanel(const sf::Font& font) : font(font) {}
 
@@ -19,13 +20,21 @@ void ColorPanel::draw(sf::RenderWindow& window) {
 
 bool ColorPanel::handleEvent(const sf::Vector2i& mousePos, bool mousePressed, int& selectedColorIndex) {
     bool changed = false;
-    for (int i = 0; i < 3; ++i) {
-        sf::FloatRect btn(panelPos.x + i * 40, panelPos.y, 30, 30);
+    for (int i = 0; i < 4; ++i) { // 3から4に変更
+        sf::FloatRect btn(panelPos.x + i * 35, panelPos.y, 30, 30); // 間隔を35に調整
         if (btn.contains(static_cast<sf::Vector2f>(mousePos)) && mousePressed) {
             if (currentColorIndex != i) {
                 currentColorIndex = i;
                 selectedColorIndex = i;
                 changed = true;
+
+                // ログ出力（デバッグ用）
+                if (i == 3) {
+                    std::cout << "Transparent color selected" << std::endl;
+                }
+                else {
+                    std::cout << "Color slot " << i << " selected" << std::endl;
+                }
             }
         }
     }
@@ -72,15 +81,52 @@ std::array<sf::Color, 3> ColorPanel::getColorSet() const {
 }
 
 void ColorPanel::drawColorButtons(sf::RenderWindow& window) {
-    for (int i = 0; i < 3; ++i) {
+    for (int i = 0; i < 4; ++i) { // 3から4に変更
         sf::RectangleShape btn(sf::Vector2f(30, 30));
-        btn.setPosition(panelPos.x + i * 40, panelPos.y);
-        btn.setFillColor((*currentColors)[i]);
+        btn.setPosition(panelPos.x + i * 35, panelPos.y); // 間隔を40から35に調整
+
+        if (i == 3) {
+            // 4つ目のボタン：透明色（チェッカーボードパターン）
+            drawTransparentButton(window, panelPos.x + i * 35, panelPos.y);
+        }
+        else {
+            // 1-3つ目のボタン：通常の色
+            btn.setFillColor((*currentColors)[i]);
+            window.draw(btn);
+        }
+
+        // 選択枠の描画
+        btn.setFillColor(sf::Color::Transparent);
         btn.setOutlineColor(currentColorIndex == i ? sf::Color::White : sf::Color(100, 100, 100));
         btn.setOutlineThickness(2.f);
         window.draw(btn);
     }
 }
+
+void ColorPanel::drawTransparentButton(sf::RenderWindow& window, float x, float y) {
+    const int checkSize = 6; // チェッカーボードの1マスのサイズ
+    sf::Color color1(240, 240, 240); // 明るいグレー
+    sf::Color color2(200, 200, 200); // 暗いグレー
+
+    // 30x30のボタン内にチェッカーボードパターンを描画
+    for (int cy = 0; cy < 30; cy += checkSize) {
+        for (int cx = 0; cx < 30; cx += checkSize) {
+            // チェッカーボードパターンの色を決定
+            sf::Color checkColor = ((cx / checkSize + cy / checkSize) % 2 == 0) ? color1 : color2;
+
+            // 小さな矩形を描画
+            sf::RectangleShape check;
+            check.setSize(sf::Vector2f(
+                std::min(checkSize, 30 - cx),  // ボタンの境界を超えないよう調整
+                std::min(checkSize, 30 - cy)
+            ));
+            check.setPosition(x + cx, y + cy);
+            check.setFillColor(checkColor);
+            window.draw(check);
+        }
+    }
+}
+
 
 void ColorPanel::drawSliders(sf::RenderWindow& window) {
     sf::Color& col = (*currentColors)[currentColorIndex];
