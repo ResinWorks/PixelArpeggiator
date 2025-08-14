@@ -908,6 +908,7 @@ void updateGameState(const sf::Vector2i& mousePos, bool mousePressed, bool& isPa
         // 新システム：現在編集中の色をグローバルカラーパレットに反映
         colorPanel.updateGlobalColorFromCurrent();
 
+        /*
         // ログ出力（グローバルカラーインデックス情報を追加）
         int currentColorIndex = colorPanel.getCurrentColorIndex();
         int globalColorIndex = colorPanel.getCurrentSlotGlobalIndex();
@@ -917,6 +918,7 @@ void updateGameState(const sf::Vector2i& mousePos, bool mousePressed, bool& isPa
             << globalColorIndex << "] to RGB("
             << (int)newColor.r << ", " << (int)newColor.g << ", "
             << (int)newColor.b << ") via color slot [" << currentColorIndex << "]" << std::endl;
+        */
     }
 
     // マウス押下時の処理
