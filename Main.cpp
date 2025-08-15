@@ -36,6 +36,16 @@ extern LargeTileManager largeTileManager;
 const int WINDOW_WIDTH = 1800;
 const int WINDOW_HEIGHT = 900;
 
+
+//********タイルサイズ・キャンバスサイズ調整用********
+const int TILE_SIZE = 9; // タイルのサイズ 3*3がベースなので2以下、３の倍数以外では非推奨
+
+const int CANVAS_WIDTH = 160; // キャンバスの幅（タイル数）
+const int CANVAS_HEIGHT = 160; // キャンバスの高さ（タイル数）
+//***********************************************
+
+
+
 /**
  * 画像出力用のヘルパー関数
  */
@@ -46,7 +56,10 @@ public:
         auto tm = *std::localtime(&now);
 
         std::ostringstream oss;
-        oss << "dotarp_canvas_" << std::put_time(&tm, "%Y%m%d_%H%M%S") << "." << extension;
+        oss << "PArp_" << std::put_time(&tm, "%m%d_%H%M")
+            << "_tileSize_" << TILE_SIZE
+            << "_" << CANVAS_WIDTH << "W_" << CANVAS_HEIGHT<<"H"
+            << "." << extension;
         return oss.str();
     }
 
@@ -163,8 +176,12 @@ int main() {
     TilePalette tilePalette(50, sf::Vector2f(20, 60));
 
     GlobalColorPalette globalColorPalette(sf::Vector2f(20, 20), 50);
+    
+    //
 
-    Canvas canvas(160, 160, 3, sf::Vector2f(360, 20));
+
+    //Canvas canvas(160, 160, 3, sf::Vector2f(360, 20));
+    Canvas canvas(CANVAS_WIDTH, CANVAS_HEIGHT, TILE_SIZE, sf::Vector2f(360, 20));
     CanvasView canvasView(sf::Vector2f(360, 20), window.getSize());
     DrawingManager drawingManager;
     UIManager uiManager(font);
@@ -588,9 +605,13 @@ void handleFileOperations(const sf::Vector2i& clickPos, UIManager& uiManager,
     TilePalette& tilePalette, PatternGrid& patternGrid,
     ColorPanel& colorPanel, Canvas& canvas, GlobalColorPalette& globalColorPalette) {
 
+    std::string defaultName = ImageExportHelper::generateDefaultFilename("dat");
+ 
     // プロジェクト保存（グローバルカラー形式）
     if (uiManager.getButton(ButtonIndex::SAVE_FILE).isClicked(clickPos, true)) {
-        const char* savePath = tinyfd_saveFileDialog("Save Project", "project.dat", 0, nullptr, nullptr);
+       // const char* savePath = tinyfd_saveFileDialog("Save Project", "project.dat", 0, nullptr, nullptr);
+        const char* savePath = tinyfd_saveFileDialog("Save Project",  defaultName.c_str(), 0, nullptr, nullptr);
+
         if (savePath) {
             // グローバルカラーインデックス配列を取得
             std::vector<std::array<int, 3>> allGlobalColorIndices;
