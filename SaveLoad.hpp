@@ -5,6 +5,7 @@
 #include <array>
 #include <SFML/Graphics.hpp>
 #include <iostream>
+#include "AppSettings.hpp"
 
 // --- 型別名定義 ---
 using PatternData = std::vector<int>;
@@ -76,6 +77,10 @@ void saveProject(const std::string& filename,
     std::cout << "プロジェクトを保存しました（旧形式）: " << filename << std::endl;
 }
 
+
+
+/*
+*/
 // 旧形式でのロード関数（修正版：バージョンチェック対応）
 bool loadProject(const std::string& filename,
     std::vector<PatternData>& patternsOut,
@@ -331,6 +336,11 @@ bool loadProjectWithGlobalColors(const std::string& filename,
 
         std::cout << "バージョン " << version << " のファイルを読み込み中..." << std::endl;
 
+        //-----------------------------------------------------------------------------------------
+        //グローバルパレット数を変更可能にする場合：以下変更
+        // 未実装
+        //-----------------------------------------------------------------------------------------
+
         // グローバルカラーパレット（16色）を読み込み
         for (int i = 0; i < 16; ++i) {
             sf::Uint8 r, g, b;
@@ -398,6 +408,7 @@ bool loadProjectWithGlobalColors(const std::string& filename,
         std::cout << "キャンバスサイズ: " << canvasWidth << "x" << canvasHeight << std::endl;
 
         // キャンバスデータを読み込み
+        /*
         canvasOut.resize(canvasHeight);
         for (size_t y = 0; y < canvasHeight; ++y) {
             canvasOut[y].resize(canvasWidth);
@@ -409,6 +420,41 @@ bool loadProjectWithGlobalColors(const std::string& filename,
                 }
             }
         }
+        */
+
+        canvasOut.resize(AppSettings::canvasHeight); // 現在の設定サイズでリサイズ
+        for (size_t y = 0; y < AppSettings::canvasHeight; ++y) {
+            canvasOut[y].resize(AppSettings::canvasWidth, -1); // -1で初期化
+        }
+
+        // ファイルから実際のデータを読み込み（重なる部分のみ）
+        size_t readHeight = std::min(canvasHeight, static_cast<size_t>(AppSettings::canvasHeight));
+        size_t readWidth = std::min(canvasWidth, static_cast<size_t>(AppSettings::canvasWidth));
+
+        for (size_t y = 0; y < canvasHeight; ++y) {
+            for (size_t x = 0; x < canvasWidth; ++x) {
+                int tileValue;
+                ifs.read(reinterpret_cast<char*>(&tileValue), sizeof(int));
+                if (ifs.fail()) {
+                    std::cerr << "キャンバス(" << x << "," << y << ")の読み込みエラー" << std::endl;
+                    return false;
+                }
+
+                // 現在のキャンバスサイズ内の場合のみ設定
+                if (y < readHeight && x < readWidth) {
+                    canvasOut[y][x] = tileValue;
+                }
+                // 範囲外のデータは読み込むが破棄
+            }
+        }
+
+        std::cout << "読み込み完了: ファイル=" << canvasWidth << "x" << canvasHeight
+            << " → 現在=" << AppSettings::canvasWidth << "x" << AppSettings::canvasHeight
+            << " (重複部分: " << readWidth << "x" << readHeight << ")" << std::endl;
+
+
+
+
 
         std::cout << "読み込み完了: "
             << patternsOut.size() << "パターン, "
@@ -457,3 +503,4 @@ bool loadProjectAuto(const std::string& filename,
         return loadProject(filename, patternsOut, colorSetsOut, canvasOut);
     }
 }
+

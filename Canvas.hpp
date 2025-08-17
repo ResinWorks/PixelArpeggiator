@@ -245,4 +245,61 @@ private:
 		const std::array<sf::Color, 16>& globalColors,
 		bool showGrid, float spacing, float shrink, float scale = 1.0f);
 
+
+
+
+
+	/*
+	// 異なるサイズのデータを読み込む
+	void setTileIndicesAdaptive(const std::vector<std::vector<int>>& newTileIndices) {
+		// 現在のキャンバスサイズ
+		int currentWidth = tileIndices[0].size();
+		int currentHeight = tileIndices.size();
+
+		// 読み込みデータのサイズ
+		int dataHeight = newTileIndices.size();
+		int dataWidth = (dataHeight > 0) ? newTileIndices[0].size() : 0;
+
+		// 共通領域のサイズを計算
+		int copyHeight = std::min(currentHeight, dataHeight);
+		int copyWidth = std::min(currentWidth, dataWidth);
+
+		// まず全体をクリア（-1で初期化）
+		for (int y = 0; y < currentHeight; ++y) {
+			for (int x = 0; x < currentWidth; ++x) {
+				tileIndices[y][x] = -1;
+			}
+		}
+
+		// 共通領域のデータをコピー
+		for (int y = 0; y < copyHeight; ++y) {
+			for (int x = 0; x < copyWidth; ++x) {
+				tileIndices[y][x] = newTileIndices[y][x];
+			}
+		}
+
+		// ログ出力
+		std::cout << "キャンバス適応読み込み: "
+			<< "データサイズ(" << dataWidth << "x" << dataHeight << ") → "
+			<< "現在のサイズ(" << currentWidth << "x" << currentHeight << ")"
+			<< std::endl;
+		std::cout << "共通領域: " << copyWidth << "x" << copyHeight << " をコピーしました" << std::endl;
+
+		setDirty(true);
+	}
+
+	// 既存のsetTileIndicesメソッド（完全一致の場合）
+	void setTileIndices(const std::vector<std::vector<int>>& indices) {
+		if (indices.size() == tileIndices.size() &&
+			!indices.empty() && indices[0].size() == tileIndices[0].size()) {
+			// サイズが完全一致する場合は従来通り
+			tileIndices = indices;
+		}
+		else {
+			// サイズが異なる場合は適応的読み込み
+			setTileIndicesAdaptive(indices);
+		}
+		setDirty(true);
+	}
+	*/
 };

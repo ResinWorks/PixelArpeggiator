@@ -701,7 +701,10 @@ void handleFileOperations(const sf::Vector2i& clickPos, UIManager& uiManager,
 
                     // 現在のパターンをクリア
                     // TilePaletteに新しいパターンを設定する前に、必要に応じてクリア処理を行う
-                    // tilePalette.clear(); // clearメソッドが必要な場合は後で追加
+                   //  tilePalette.clear(); // clearメソッドが必要な場合は後で追加
+                     tilePalette.clearPatterns(); // パターンをクリア
+
+
 
                     // パターンをグローバルカラーインデックス付きで復元
                     for (size_t i = 0; i < patterns.size(); ++i) {
@@ -738,6 +741,9 @@ void handleFileOperations(const sf::Vector2i& clickPos, UIManager& uiManager,
                 else {
                     // 旧形式（個別カラーセット）の場合
                     std::cout << "旧形式のプロジェクトを読み込み中..." << std::endl;
+
+
+                    tilePalette.clearPatterns();
 
                     // 旧形式として読み込み（後方互換性）
                     tilePalette.loadPatterns(patterns, colorSets);

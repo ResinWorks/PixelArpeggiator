@@ -9,7 +9,7 @@ StartupDialog::StartupDialog(sf::RenderWindow& window, sf::Font& font)
 
     // ダイアログボックスの設定
     dialogBox.setSize(sf::Vector2f(600, 300));
-    dialogBox.setPosition(700, 300); // 画面中央付近
+    dialogBox.setPosition(600, 300); // 画面中央付近
     dialogBox.setFillColor(sf::Color(50, 50, 50));
     dialogBox.setOutlineThickness(2);
     dialogBox.setOutlineColor(sf::Color::White);
@@ -30,17 +30,17 @@ StartupDialog::StartupDialog(sf::RenderWindow& window, sf::Font& font)
 
     // 入力フィールドの設定
     tileSizeField.setSize(sf::Vector2f(100, 25));
-    tileSizeField.setPosition(850, 380);
+    tileSizeField.setPosition(950, 380);
     tileSizeField.setFillColor(sf::Color(30, 30, 30));
     tileSizeField.setOutlineThickness(1);
 
     widthField.setSize(sf::Vector2f(100, 25));
-    widthField.setPosition(850, 420);
+    widthField.setPosition(950, 420);
     widthField.setFillColor(sf::Color(30, 30, 30));
     widthField.setOutlineThickness(1);
 
     heightField.setSize(sf::Vector2f(100, 25));
-    heightField.setPosition(850, 460);
+    heightField.setPosition(950, 460);
     heightField.setFillColor(sf::Color(30, 30, 30));
     heightField.setOutlineThickness(1);
 }
@@ -179,7 +179,7 @@ void StartupDialog::draw() {
     window.draw(dialogBox);
 
     // タイトル
-    drawText("Canvas Settings", 750, 320, 20, sf::Color::White);
+    drawText("Canvas Settings", 800, 320, 20, sf::Color::White);
 
     // ラベル
     drawText("Tile Size (3-30):", 720, 385, 14, sf::Color::White);
