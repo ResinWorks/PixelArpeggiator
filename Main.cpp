@@ -19,6 +19,8 @@
 #include "UIManager.hpp"  // 新しく分離したUIManager
 #include "tinyfiledialogs.h"
 #include "GlobalColorPalette.hpp"
+#include "StartupDialog.hpp" // 新しく分離したStartupDialog
+#include "AppSettings.hpp" 
 
 
 //#include <iostream>
@@ -37,6 +39,8 @@ const int WINDOW_WIDTH = 1800;
 const int WINDOW_HEIGHT = 900;
 
 
+/*
+
 //********タイルサイズ・キャンバスサイズ調整用********
 const int TILE_SIZE = 9; // タイルのサイズ 3*3がベースなので2以下、３の倍数以外では非推奨
 
@@ -44,7 +48,15 @@ const int CANVAS_WIDTH = 160; // キャンバスの幅（タイル数）
 const int CANVAS_HEIGHT = 160; // キャンバスの高さ（タイル数）
 //***********************************************
 
+*/
 
+// タイルサイズとキャンバスサイズを定数として定義
+//画像・dat出力に TILE_SIZEなどがあるが、開始直後に出力が呼ばれることはないはず
+/*
+static int TILE_SIZE;
+static int CANVAS_WIDTH;
+static int CANVAS_HEIGHT;
+*/
 
 /**
  * 画像出力用のヘルパー関数
@@ -57,9 +69,15 @@ public:
 
         std::ostringstream oss;
         oss << "PArp_" << std::put_time(&tm, "%m%d_%H%M")
+            /*
             << "_tileSize_" << TILE_SIZE
             << "_" << CANVAS_WIDTH << "W_" << CANVAS_HEIGHT<<"H"
             << "." << extension;
+            */
+            << "_tileSize_" << AppSettings::tileSize
+            << "_" << AppSettings::canvasWidth << "W_" << AppSettings::canvasHeight << "H"
+            << "." << extension;
+
         return oss.str();
     }
 
@@ -74,6 +92,10 @@ public:
         else if (extension == "jpg" || extension == "jpeg") {
             filterPatterns = { "*.jpg", "*.jpeg" };
             filterDescription = "JPEG Images";
+        }
+        else if (extension == "dat") {
+            filterPatterns = { "*.dat" };
+            filterDescription = "Project Files";
         }
         else {
             filterPatterns = { "*.*" };
@@ -169,6 +191,28 @@ int main() {
         std::cerr << "フォント読み込み失敗" << std::endl;
         return -1;
     }
+
+
+    // 起動時設定ダイアログ
+    StartupDialog dialog(window, font);
+    CanvasSettings settings;
+
+    if (!dialog.showDialog(settings)) {
+        // キャンセルされた場合は終了
+        return 0;
+    }
+    // AppSettingsに設定を反映
+    AppSettings::updateSettings(settings.tileSize, settings.canvasWidth, settings.canvasHeight);
+    std::cout << "Starting with: TileSize=" << AppSettings::tileSize
+        << ", Canvas=" << AppSettings::canvasWidth << "x" << AppSettings::canvasHeight << std::endl;
+
+    
+    // 設定を定数として適用（const削除）
+    int TILE_SIZE = settings.tileSize;
+    int CANVAS_WIDTH = settings.canvasWidth;
+    int CANVAS_HEIGHT = settings.canvasHeight;
+    
+
 
     // コンポーネント初期化
     PatternGrid patternGrid(3, 3, 50);

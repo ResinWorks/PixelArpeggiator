@@ -171,6 +171,7 @@ gdi32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="AppSettings.cpp" />
     <ClCompile Include="Button.cpp" />
     <ClCompile Include="Canvas.cpp" />
     <ClCompile Include="ColorPanel.cpp" />
@@ -180,12 +181,14 @@ gdi32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     <ClCompile Include="LargeTileSystem.cpp" />
     <ClCompile Include="Main.cpp" />
     <ClCompile Include="PatternGrid.cpp" />
+    <ClCompile Include="StartupDialog.cpp" />
     <ClCompile Include="test.cpp" />
     <ClCompile Include="TilePalette.cpp" />
     <ClCompile Include="tinyfiledialogs.c" />
     <ClCompile Include="UIManager.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="AppSettings.hpp" />
     <ClInclude Include="Button.hpp" />
     <ClInclude Include="Canvas.hpp" />
     <ClInclude Include="CanvasView.hpp" />
@@ -198,6 +201,7 @@ gdi32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     <ClInclude Include="LargeTileSystem.hpp" />
     <ClInclude Include="PatternGrid.hpp" />
     <ClInclude Include="SaveLoad.hpp" />
+    <ClInclude Include="StartupDialog.hpp" />
     <ClInclude Include="TilePalette.hpp" />
     <ClInclude Include="tinyfiledialogs.h" />
     <ClInclude Include="UIHelper.hpp" />
