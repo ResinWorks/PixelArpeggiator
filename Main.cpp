@@ -393,6 +393,7 @@ void handleButtonClicks(const sf::Vector2i& clickPos, UIManager& uiManager,
 
     // 回転ボタン
     if (uiManager.getButton(ButtonIndex::ROTATE_BUTTON).isClicked(clickPos, true)) {
+
         largeTileManager.rotateCurrentTile();
     }
 

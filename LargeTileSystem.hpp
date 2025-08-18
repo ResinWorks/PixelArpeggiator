@@ -220,25 +220,34 @@ private:
     std::vector<int> rotate2x2Indices(const std::vector<int>& original, RotationAngle angle) const {
         if (original.size() != 4) return original;
 
+        
+
+        std::vector<int> result;
+        
         switch (angle) {
         case RotationAngle::ROTATE_90:
-            // 時計回り90度: 各タイルが時計回りに移動
-            // 左上→右上, 右上→右下, 右下→左下, 左下→左上
-            return { original[2], original[0], original[3], original[1] };
-
+            // 時計回り90度: 左下→左上, 左上→右上, 右上→右下, 右下→左下
+            result = { original[2], original[0], original[3], original[1] };
+            break;
+            
         case RotationAngle::ROTATE_180:
-            // 180度: 対角線で入れ替え
-            // 左上↔右下, 右上↔左下
-            return { original[3], original[2], original[1], original[0] };
-
+            // 180度: 完全に対角線で入れ替え
+            result = { original[3], original[2], original[1], original[0] };
+            break;
+            
         case RotationAngle::ROTATE_270:
-            // 反時計回り90度（時計回り270度）
-            // 左上→左下, 右上→左上, 右下→右上, 左下→右下
-            return { original[1], original[3], original[0], original[2] };
-
+            // 反時計回り90度: 右上→左上, 右下→右上, 左下→右下, 左上→左下
+            result = { original[1], original[3], original[0], original[2] };
+            break;
+            
         default:
-            return original;
+            result = original;
+            break;
         }
+
+
+
+        return result;
     }
 
     /**
@@ -302,6 +311,12 @@ private:
             sf::Vector2i(basePos.x + tileSize, basePos.y + tileSize) // [3] 右下
         };
 
+        positions = basePositions;
+
+        //-------------------------------------------------------------------------------------------------------
+        // 並び替えは必要ない？
+        //-------------------------------------------------------------------------------------------------------
+        /*
         // 回転に応じて位置を並び替え（インデックスの回転と同じロジック）
         switch (angle) {
         case RotationAngle::ROTATE_0:
@@ -309,29 +324,31 @@ private:
             break;
         case RotationAngle::ROTATE_90:
             positions = {
-                basePositions[2], // [0]の位置に[2]が来る
-                basePositions[0], // [1]の位置に[0]が来る  
-                basePositions[3], // [2]の位置に[3]が来る
-                basePositions[1]  // [3]の位置に[1]が来る
+                basePositions[0], // [0]の位置に[2]が来る
+                basePositions[1], // [1]の位置に[0]が来る  
+                basePositions[2], // [2]の位置に[3]が来る
+                basePositions[3]  // [3]の位置に[1]が来る
             };
             break;
         case RotationAngle::ROTATE_180:
             positions = {
-                basePositions[3], // [0]の位置に[3]が来る
-                basePositions[2], // [1]の位置に[2]が来る
-                basePositions[1], // [2]の位置に[1]が来る
-                basePositions[0]  // [3]の位置に[0]が来る
+                 basePositions[0], // [0]の位置に[2]が来る
+                basePositions[1], // [1]の位置に[0]が来る  
+                basePositions[2], // [2]の位置に[3]が来る
+                basePositions[3]  // [3]の位置に[1]が来る
             };
             break;
         case RotationAngle::ROTATE_270:
             positions = {
-                basePositions[1], // [0]の位置に[1]が来る
-                basePositions[3], // [1]の位置に[3]が来る
-                basePositions[0], // [2]の位置に[0]が来る
-                basePositions[2]  // [3]の位置に[2]が来る
+                 basePositions[0], // [0]の位置に[2]が来る
+                basePositions[1], // [1]の位置に[0]が来る  
+                basePositions[2], // [2]の位置に[3]が来る
+                basePositions[3]  // [3]の位置に[1]が来る
             };
             break;
         }
+        */
+        //-------------------------------------------------------------------------------------------------------
 
         return positions;
     }
