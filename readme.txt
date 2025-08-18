@@ -38,6 +38,11 @@ Third-party Licenses:
 SFML: Licensed under zlib/png License
 M+ Font: Licensed under M+ FONT LICENSE
 tinyfiledialogs: zlib License
+
+
+使用フォント：
+© 2018-2025 hicc 患者長ひっく 様
+x14y24pxHeadUpDaisy
 --------------------------------------------
 Yuto Inoue
 contact: i.resin.workshop@gmail.com

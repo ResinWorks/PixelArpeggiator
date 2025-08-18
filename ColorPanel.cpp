@@ -4,7 +4,7 @@
 #include "GlobalColorPalette.hpp"
 #include <algorithm>
 #include <sstream>
-
+#include <iostream>
 ColorPanel::ColorPanel(const sf::Font& font) : font(font) {}
 
 void ColorPanel::setTarget(std::array<sf::Color, 3>& colorSet) {
@@ -19,6 +19,8 @@ void ColorPanel::draw(sf::RenderWindow& window) {
 
 bool ColorPanel::handleEvent(const sf::Vector2i& mousePos, bool mousePressed, int& selectedColorIndex) {
     bool changed = false;
+
+  /*
     for (int i = 0; i < 3; ++i) {
         sf::FloatRect btn(panelPos.x + i * 40, panelPos.y, 30, 30);
         if (btn.contains(static_cast<sf::Vector2f>(mousePos)) && mousePressed) {
@@ -30,9 +32,35 @@ bool ColorPanel::handleEvent(const sf::Vector2i& mousePos, bool mousePressed, in
         }
     }
     return changed;
+
+  */
+    for (int i = 0; i < 4; ++i) { // 3から4に変更
+        sf::FloatRect btn(panelPos.x + i * 35, panelPos.y, 30, 30); // 間隔を35に調整
+        if (btn.contains(static_cast<sf::Vector2f>(mousePos)) && mousePressed) {
+            if (currentColorIndex != i) {
+                currentColorIndex = i;
+                selectedColorIndex = i;
+                changed = true;
+
+                // ログ出力（デバッグ用）
+                if (i == 3) {
+                    std::cout << "Transparent color selected" << std::endl;
+                }
+                else {
+                    std::cout << "Color slot " << i << " selected" << std::endl;
+                }
+            }
+        }
+    }
+    return changed;
 }
 
 bool ColorPanel::updateSliders(const sf::Vector2i& mousePos, bool mousePressed) {
+
+    // 透明色が選択されている場合はスライダー操作を無効化
+    if (currentColorIndex == 3) {
+        return false;
+    }
     if (!currentColors) return false;
     bool colorChanged = false;
     sf::Color& col = (*currentColors)[currentColorIndex];
@@ -72,6 +100,7 @@ std::array<sf::Color, 3> ColorPanel::getColorSet() const {
 }
 
 void ColorPanel::drawColorButtons(sf::RenderWindow& window) {
+    /*
     for (int i = 0; i < 3; ++i) {
         sf::RectangleShape btn(sf::Vector2f(30, 30));
         btn.setPosition(panelPos.x + i * 40, panelPos.y);
@@ -80,9 +109,40 @@ void ColorPanel::drawColorButtons(sf::RenderWindow& window) {
         btn.setOutlineThickness(2.f);
         window.draw(btn);
     }
+  */
+    for (int i = 0; i < 4; ++i) { // 3から4に変更
+        sf::RectangleShape btn(sf::Vector2f(30, 30));
+        btn.setPosition(panelPos.x + i * 35, panelPos.y); // 間隔を40から35に調整
+
+        if (i == 3) {
+            // 4つ目のボタン：透明色
+            drawTransparentButton(window, panelPos.x + i * 35, panelPos.y);
+        }
+        else {
+            // 1-3つ目のボタン：通常の色
+            btn.setFillColor((*currentColors)[i]);
+            window.draw(btn);
+        }
+
+        // 選択枠の描画
+        btn.setFillColor(sf::Color::Transparent);
+        btn.setOutlineColor(currentColorIndex == i ? sf::Color::White : sf::Color(100, 100, 100));
+        btn.setOutlineThickness(2.f);
+        window.draw(btn);
+    }
 }
 
 void ColorPanel::drawSliders(sf::RenderWindow& window) {
+
+    if (currentColorIndex == 3) {
+        // 透明色選択時：スライダーの代わりに「透明色」テキストを表示
+        drawText(window, font, "Transparent Color", 16,
+            sf::Vector2f(panelPos.x, panelPos.y + 60), sf::Color::White);
+        drawText(window, font, "No RGB editing available", 12,
+            sf::Vector2f(panelPos.x, panelPos.y + 85), sf::Color(150, 150, 150));
+        return;
+    }
+
     sf::Color& col = (*currentColors)[currentColorIndex];
     int values[3] = { col.r, col.g, col.b };
     std::string labels[3] = { "R", "G", "B" };
@@ -123,8 +183,21 @@ void ColorPanel::setGlobalColorPalette(GlobalColorPalette* globalPalette) {
 }
 
 void ColorPanel::setGlobalColorIndices(const std::array<int, 3>& indices) {
+    // 透明色が選択されている場合は何もしない
+    if (currentColorIndex == 3) {
+        std::cout << "Transparent color selected - Global color assignment ignored" << std::endl;
+        return;
+    }
     globalColorIndices = indices;
     updateColorsFromGlobal(); // グローバルカラーから実際の色を更新
+}
+
+int ColorPanel::getCurrentSlotGlobalIndex() const {
+    // 透明色が選択されている場合は-1を返す
+    if (currentColorIndex == 3) {
+        return -1;
+    }
+    return globalColorIndices[currentColorIndex];
 }
 
 void ColorPanel::updateColorsFromGlobal() {
@@ -139,6 +212,12 @@ void ColorPanel::updateColorsFromGlobal() {
 }
 
 void ColorPanel::updateGlobalColorFromCurrent() {
+
+    // 透明色が選択されている場合は何もしない
+    if (currentColorIndex == 3) {
+        return;
+    }
+
     if (globalColorPalette && currentColors) {
         int globalIndex = globalColorIndices[currentColorIndex];
         if (globalIndex >= 0 && globalIndex < 16) {
@@ -148,8 +227,37 @@ void ColorPanel::updateGlobalColorFromCurrent() {
 }
 
 void ColorPanel::setCurrentSlotGlobalIndex(int globalIndex) {
+    // 透明色が選択されている場合は何もしない
+    if (currentColorIndex == 3) {
+        std::cout << "Transparent color selected - Global color assignment ignored" << std::endl;
+        return;
+    }
     if (globalIndex >= 0 && globalIndex < 16) {
         globalColorIndices[currentColorIndex] = globalIndex;
         updateColorsFromGlobal(); // 色を更新
+    }
+}
+
+void ColorPanel::drawTransparentButton(sf::RenderWindow& window, float x, float y) {
+    const int checkSize = 6; // チェッカーボードの1マスのサイズ
+    sf::Color color1(240, 240, 240); // 明るいグレー
+    sf::Color color2(200, 200, 200); // 暗いグレー
+
+    // 30x30のボタン内にチェッカーボードパターンを描画
+    for (int cy = 0; cy < 30; cy += checkSize) {
+        for (int cx = 0; cx < 30; cx += checkSize) {
+            // チェッカーボードパターンの色を決定
+            sf::Color checkColor = ((cx / checkSize + cy / checkSize) % 2 == 0) ? color1 : color2;
+
+            // 小さな矩形を描画
+            sf::RectangleShape check;
+            check.setSize(sf::Vector2f(
+                std::min(checkSize, 30 - cx),  // ボタンの境界を超えないよう調整
+                std::min(checkSize, 30 - cy)
+            ));
+            check.setPosition(x + cx, y + cy);
+            check.setFillColor(checkColor);
+            window.draw(check);
+        }
     }
 }

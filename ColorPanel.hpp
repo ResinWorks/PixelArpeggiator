@@ -3,6 +3,7 @@
 #include <SFML/Graphics.hpp>
 #include <array>
 #include <string>
+#include <iostream>
 
 // 前方宣言
 class GlobalColorPalette;
@@ -33,6 +34,11 @@ public:
 
     // 現在選択中の色スロットに新しい色を設定
     void setCurrentColor(const sf::Color& color) {
+        // 透明色が選択されている場合は何もしない
+        if (currentColorIndex == 3) {
+            std::cout << "Transparent color selected - Color assignment ignored" << std::endl;
+            return;
+        }
         setColor(currentColorIndex, color);
     }
 
@@ -57,9 +63,7 @@ public:
     void setCurrentSlotGlobalIndex(int globalIndex);
 
     // 現在選択中の色スロットのグローバルインデックスを取得
-    int getCurrentSlotGlobalIndex() const {
-        return globalColorIndices[currentColorIndex];
-    }
+    int getCurrentSlotGlobalIndex() const;
 
 private:
     std::array<sf::Color, 3>* currentColors = nullptr; // ★ 外部参照
@@ -75,4 +79,7 @@ private:
 
     void drawSliders(sf::RenderWindow& window);
     void drawColorButtons(sf::RenderWindow& window);
+
+    //追加：透過色
+    void drawTransparentButton(sf::RenderWindow& window, float x, float y);
 };
