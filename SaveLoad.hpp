@@ -372,7 +372,7 @@ bool loadProjectWithGlobalColors(const std::string& filename,
 				}
 
 				if (pattern[j] == 3) {
-				//	std::cerr << "透明色: パターン" << i << "、タイル "<<j << " のパターン値を-1に変換" << std::endl;
+					//	std::cerr << "透明色: パターン" << i << "、タイル "<<j << " のパターン値を-1に変換" << std::endl;
 					pattern[j] = -1; // 透明色を-1に変換
 				}
 				// 透明色対応：パターンデータの妥当性チェック
@@ -414,6 +414,9 @@ bool loadProjectWithGlobalColors(const std::string& filename,
 
 		std::cout << "キャンバスサイズ: " << canvasWidth << "x" << canvasHeight << std::endl;
 
+
+		/*
+
 		// キャンバスデータを読み込み
 		canvasOut.resize(canvasHeight);
 		for (size_t y = 0; y < canvasHeight; ++y) {
@@ -425,8 +428,42 @@ bool loadProjectWithGlobalColors(const std::string& filename,
 					return false;
 				}
 
+
+
 				// キャンバスデータの妥当性チェック（透明色対応）
 				// キャンバス上のタイルインデックスは-1（空）または0以上の値
+				if (canvasOut[y][x] < -1) {
+					std::cerr << "不正なキャンバスタイルインデックス: " << canvasOut[y][x] << std::endl;
+					canvasOut[y][x] = -1; // 空タイルに修正
+				}
+			}
+		}
+		*/
+
+		// キャンバスデータを読み込み（可変サイズ対応）
+		canvasOut.resize(AppSettings::canvasHeight); // 現在の設定サイズでリサイズ
+		for (size_t y = 0; y < AppSettings::canvasHeight; ++y) {
+			canvasOut[y].resize(AppSettings::canvasWidth, -1); // -1で初期化
+		}
+
+		// ファイルからデータを読み込み（重なる部分のみ）
+		size_t readHeight = std::min(canvasHeight, static_cast<size_t>(AppSettings::canvasHeight));
+		size_t readWidth = std::min(canvasWidth, static_cast<size_t>(AppSettings::canvasWidth));
+
+		for (size_t y = 0; y < canvasHeight; ++y) {
+			for (size_t x = 0; x < canvasWidth; ++x) {
+				int tileValue;
+				ifs.read(reinterpret_cast<char*>(&tileValue), sizeof(int));
+				if (ifs.fail()) {
+					std::cerr << "キャンバス(" << x << "," << y << ")の読み込みエラー" << std::endl;
+					return false;
+				}
+
+				// 現在のキャンバスサイズ内の場合のみ設定
+				if (y < readHeight && x < readWidth) {
+					canvasOut[y][x] = tileValue;
+				}
+
 				if (canvasOut[y][x] < -1) {
 					std::cerr << "不正なキャンバスタイルインデックス: " << canvasOut[y][x] << std::endl;
 					canvasOut[y][x] = -1; // 空タイルに修正
