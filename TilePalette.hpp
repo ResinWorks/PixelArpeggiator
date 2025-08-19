@@ -360,6 +360,8 @@ public:
     }
 
 
+   
+
     void clearPatterns() {
         patterns.clear();
         colorPalettes.clear();

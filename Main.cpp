@@ -521,20 +521,22 @@ void handleButtonClicks(const sf::Vector2i& clickPos, UIManager& uiManager,
             }
             */
             if (selIdx >= 0) {
-                // 新システム：選択されたパターンのグローバルカラーインデックスをColorPanelに設定
+                // 選択されたパターンのグローバルカラーインデックスをColorPanelに設定
                 auto globalIndices = tilePalette.getGlobalColorIndices(selIdx);
                 colorPanel.setGlobalColorIndices(globalIndices);
 
-                // パターンデータをPatternGridに設定
+                // 後方互換性：従来の色セット設定も行う
+                colorPanel.setTarget(tilePalette.getSelectedColorSet());
+
+                // グローバルカラーから実際の色を更新
+                colorPanel.updateColorsFromGlobal();
+
                 auto flat = tilePalette.getPattern(selIdx);
                 std::vector<std::vector<int>> grid(3, std::vector<int>(3));
                 for (int i = 0; i < 9; ++i) {
                     grid[i / 3][i % 3] = flat[i];
                 }
                 patternGrid.setTiles(grid);
-
-                // 後方互換性：従来の色セット設定も行う
-                colorPanel.setTarget(tilePalette.getSelectedColorSet());
 
                 std::cout << "Selected pattern [" << selIdx << "] with global color indices: ["
                     << globalIndices[0] << ", " << globalIndices[1] << ", " << globalIndices[2] << "]" << std::endl;
@@ -719,6 +721,9 @@ void handleFileOperations(const sf::Vector2i& clickPos, UIManager& uiManager,
                         tilePalette.addPatternWithGlobalColors(grid, globalColorIndices[i]);
                     }
 
+                    // グローバルカラーパレットをTilePaletteに設定
+                 //   tilePalette.loadPatterns(patterns, colorSets);
+
                     // キャンバスを復元
                     canvas.setTileIndices(tileData);
 
@@ -727,6 +732,10 @@ void handleFileOperations(const sf::Vector2i& clickPos, UIManager& uiManager,
                         tilePalette.selectPattern(0);
                         auto firstGlobalIndices = tilePalette.getGlobalColorIndices(0);
                         colorPanel.setGlobalColorIndices(firstGlobalIndices);
+
+
+                        // グローバルカラーから実際の色を更新
+                        colorPanel.updateColorsFromGlobal();
 
                         // PatternGridにパターンを設定
                         std::vector<std::vector<int>> grid(3, std::vector<int>(3));
