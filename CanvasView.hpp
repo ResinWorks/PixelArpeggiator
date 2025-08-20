@@ -12,7 +12,7 @@ private:
     sf::Vector2f panOffset;
     sf::Vector2f basePosition;
 
-    static constexpr float MIN_ZOOM = 0.1f;
+    static constexpr float MIN_ZOOM = 0.5f;
     static constexpr float MAX_ZOOM = 10.0f;
     static constexpr float ZOOM_STEP = 1.2f;
 
