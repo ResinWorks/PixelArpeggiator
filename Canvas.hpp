@@ -32,7 +32,13 @@ private:
 	sf::Color tileGridColor = sf::Color(128, 128, 128); // デフォルト：中間グレー
 	bool useTileGridColor = true; // タイル内部グリッド色を使用するか
 
+	// パフォーマンス改善: 最後に描画したデータのハッシュ値を保存
+	mutable size_t lastDataHash = 0;
+
 public:
+	// データ変更を外部から通知するメソッド
+	void notifyDataChanged() { isDirty = true; }
+
 	Canvas(int width, int height, int tileSize, sf::Vector2f position)
 		: width(width), height(height), tileSize(tileSize), position(position) {
 		tiles.resize(height, std::vector<int>(width, -1));
@@ -247,59 +253,9 @@ private:
 
 
 
-
-
-	/*
-	// 異なるサイズのデータを読み込む
-	void setTileIndicesAdaptive(const std::vector<std::vector<int>>& newTileIndices) {
-		// 現在のキャンバスサイズ
-		int currentWidth = tileIndices[0].size();
-		int currentHeight = tileIndices.size();
-
-		// 読み込みデータのサイズ
-		int dataHeight = newTileIndices.size();
-		int dataWidth = (dataHeight > 0) ? newTileIndices[0].size() : 0;
-
-		// 共通領域のサイズを計算
-		int copyHeight = std::min(currentHeight, dataHeight);
-		int copyWidth = std::min(currentWidth, dataWidth);
-
-		// まず全体をクリア（-1で初期化）
-		for (int y = 0; y < currentHeight; ++y) {
-			for (int x = 0; x < currentWidth; ++x) {
-				tileIndices[y][x] = -1;
-			}
-		}
-
-		// 共通領域のデータをコピー
-		for (int y = 0; y < copyHeight; ++y) {
-			for (int x = 0; x < copyWidth; ++x) {
-				tileIndices[y][x] = newTileIndices[y][x];
-			}
-		}
-
-		// ログ出力
-		std::cout << "キャンバス適応読み込み: "
-			<< "データサイズ(" << dataWidth << "x" << dataHeight << ") → "
-			<< "現在のサイズ(" << currentWidth << "x" << currentHeight << ")"
-			<< std::endl;
-		std::cout << "共通領域: " << copyWidth << "x" << copyHeight << " をコピーしました" << std::endl;
-
-		setDirty(true);
-	}
-
-	// 既存のsetTileIndicesメソッド（完全一致の場合）
-	void setTileIndices(const std::vector<std::vector<int>>& indices) {
-		if (indices.size() == tileIndices.size() &&
-			!indices.empty() && indices[0].size() == tileIndices[0].size()) {
-			// サイズが完全一致する場合は従来通り
-			tileIndices = indices;
-		}
-		else {
-			// サイズが異なる場合は適応的読み込み
-			setTileIndicesAdaptive(indices);
-		}
-		setDirty(true);
-	}
-	*/
+	// データのハッシュ値を計算（軽量）
+	size_t calculateDataHash(const std::vector<std::vector<int>>& patterns,
+		const std::vector<std::array<int, 3>>& globalColorIndices,
+		const std::array<sf::Color, 16>& globalColors) const;
 };
+

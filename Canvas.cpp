@@ -612,6 +612,8 @@ void Canvas::drawWithViewAndGlobalColors(sf::RenderWindow& window,
         initializeRenderTexture();
     }
 
+
+    /*
     bool settingsChanged = (showGrid != lastShowGrid ||
         spacing != lastSpacing ||
         shrink != lastShrink);
@@ -623,7 +625,39 @@ void Canvas::drawWithViewAndGlobalColors(sf::RenderWindow& window,
         lastSpacing = spacing;
         lastShrink = shrink;
     }
+    */
 
+    // 1:設定変更チェックの最適化
+    bool settingsChanged = false;
+    if (showGrid != lastShowGrid || spacing != lastSpacing || shrink != lastShrink) {
+        settingsChanged = true;
+        lastShowGrid = showGrid;
+        lastSpacing = spacing;
+        lastShrink = shrink;
+    }
+
+    // 2: データ変更の軽量チェック
+    bool dataChanged = false;
+    if (isDirty) {
+        dataChanged = true;
+    }
+    else {
+        // ハッシュ値による軽量な変更検知
+        size_t currentHash = calculateDataHash(patterns, globalColorIndices, globalColors);
+        if (currentHash != lastDataHash) {
+            dataChanged = true;
+            lastDataHash = currentHash;
+        }
+    }
+
+    // 3: 必要な場合のみ再描画
+    if (dataChanged || settingsChanged) {
+        renderToTextureWithGlobalColors(patterns, globalColorIndices, globalColors,
+            showGrid, spacing, shrink);
+        isDirty = false; // リセット
+    }
+
+    // 描画処理
     if (isInitialized) {
         sf::Sprite sprite(renderTexture.getTexture());
         sprite.setPosition(position);
@@ -835,4 +869,32 @@ bool Canvas::exportToImageWithGlobalColors(const std::string& filename,
         std::cerr << "Error: Failed to save image: " << filename << std::endl;
         return false;
     }
+}
+
+
+// ハッシュ値計算
+size_t Canvas::calculateDataHash(const std::vector<std::vector<int>>& patterns,
+    const std::vector<std::array<int, 3>>& globalColorIndices,
+    const std::array<sf::Color, 16>& globalColors) const {
+
+    size_t hash = 0;
+
+    // パターン数の変化を検知
+    hash ^= patterns.size() + 0x9e3779b9 + (hash << 6) + (hash >> 2);
+
+    // 最初の数パターンだけをチェック（全体をチェックするより軽量）
+    size_t checkCount = std::min(patterns.size(), size_t(8));
+    for (size_t i = 0; i < checkCount; ++i) {
+        if (i < patterns.size() && !patterns[i].empty()) {
+            hash ^= patterns[i][0] + 0x9e3779b9 + (hash << 6) + (hash >> 2);
+        }
+    }
+
+    // グローバルカラーの最初の数色をチェック
+    for (int i = 0; i < 4; ++i) {
+        hash ^= (globalColors[i].r + globalColors[i].g + globalColors[i].b)
+            + 0x9e3779b9 + (hash << 6) + (hash >> 2);
+    }
+
+    return hash;
 }

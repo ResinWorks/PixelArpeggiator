@@ -163,7 +163,7 @@ void drawRotationGuide(sf::RenderWindow& window, const sf::Font& font, int rotat
 
 int main() {
     sf::RenderWindow window(sf::VideoMode(WINDOW_WIDTH, WINDOW_HEIGHT), "PixelArpeggiator v3.0");
-    window.setFramerateLimit(120);
+    window.setFramerateLimit(30);
 
     sf::Font font;
     if (!font.loadFromFile("x14y24pxHeadUpDaisy.TTF")) {
@@ -824,6 +824,18 @@ void updateGameState(const sf::Vector2i& mousePos, bool mousePressed, bool& isPa
     }
     */
     bool colorSliderChanged = colorPanel.updateSliders(mousePos, mousePressed);
+
+
+    // カラーパネル更新
+    if (colorSliderChanged && tilePalette.getSelectedIndex() >= 0) {
+        tilePalette.updateColorSet(tilePalette.getSelectedIndex(), colorPanel.getColorSet());
+        canvas.notifyDataChanged(); //　キャンバスのデータが変更されたことを通知
+
+        // RGBスライダーで色が変更された場合の処理
+        //現在編集中の色をグローバルカラーパレットに反映
+        colorPanel.updateGlobalColorFromCurrent();
+    }
+    /*
     if (colorSliderChanged && tilePalette.getSelectedIndex() >= 0) {
         tilePalette.updateColorSet(tilePalette.getSelectedIndex(), colorPanel.getColorSet());
         canvas.setDirty(true);
@@ -832,18 +844,9 @@ void updateGameState(const sf::Vector2i& mousePos, bool mousePressed, bool& isPa
         //現在編集中の色をグローバルカラーパレットに反映
         colorPanel.updateGlobalColorFromCurrent();
 
-        /*
-        // ログ出力（グローバルカラーインデックス情報を追加）
-        int currentColorIndex = colorPanel.getCurrentColorIndex();
-        int globalColorIndex = colorPanel.getCurrentSlotGlobalIndex();
-        sf::Color newColor = colorPanel.getColorSet()[currentColorIndex];
-
-        std::cout << "RGB slider changed - Updated Global Color ["
-            << globalColorIndex << "] to RGB("
-            << (int)newColor.r << ", " << (int)newColor.g << ", "
-            << (int)newColor.b << ") via color slot [" << currentColorIndex << "]" << std::endl;
-        */
+       
     }
+    */
 
     // マウス押下時の処理
     if (mousePressed) {
@@ -868,7 +871,8 @@ void updateGameState(const sf::Vector2i& mousePos, bool mousePressed, bool& isPa
     // パターン変更処理
     if (patternChanged && tilePalette.getSelectedIndex() >= 0) {
         tilePalette.updatePattern(tilePalette.getSelectedIndex(), patternGrid.getTiles());
-        canvas.setDirty(true);
+        //canvas.setDirty(true);
+        canvas.notifyDataChanged(); // キャンバスのデータが変更されたことを通知
         patternChanged = false;
     }
 
