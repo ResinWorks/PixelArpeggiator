@@ -450,6 +450,8 @@ bool loadProjectWithGlobalColors(const std::string& filename,
 		size_t readHeight = std::min(canvasHeight, static_cast<size_t>(AppSettings::canvasHeight));
 		size_t readWidth = std::min(canvasWidth, static_cast<size_t>(AppSettings::canvasWidth));
 
+		std::cout << "読み込み範囲: " << readWidth << "x" << readHeight << std::endl;
+
 		for (size_t y = 0; y < canvasHeight; ++y) {
 			for (size_t x = 0; x < canvasWidth; ++x) {
 				int tileValue;
@@ -462,11 +464,12 @@ bool loadProjectWithGlobalColors(const std::string& filename,
 				// 現在のキャンバスサイズ内の場合のみ設定
 				if (y < readHeight && x < readWidth) {
 					canvasOut[y][x] = tileValue;
-				}
 
-				if (canvasOut[y][x] < -1) {
-					std::cerr << "不正なキャンバスタイルインデックス: " << canvasOut[y][x] << std::endl;
-					canvasOut[y][x] = -1; // 空タイルに修正
+					if (canvasOut[y][x] < -1) {
+						std::cerr << "不正なキャンバスタイルインデックス: " << canvasOut[y][x] << std::endl;
+						canvasOut[y][x] = -1; // 空タイルに修正
+					}
+
 				}
 			}
 		}

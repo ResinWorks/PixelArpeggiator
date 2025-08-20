@@ -39,28 +39,7 @@ const int WINDOW_WIDTH = 1800;
 const int WINDOW_HEIGHT = 900;
 
 
-/*
 
-//********タイルサイズ・キャンバスサイズ調整用********
-const int TILE_SIZE = 9; // タイルのサイズ 3*3がベースなので2以下、３の倍数以外では非推奨
-
-const int CANVAS_WIDTH = 160; // キャンバスの幅（タイル数）
-const int CANVAS_HEIGHT = 160; // キャンバスの高さ（タイル数）
-//***********************************************
-
-*/
-
-// タイルサイズとキャンバスサイズを定数として定義
-//画像・dat出力に TILE_SIZEなどがあるが、開始直後に出力が呼ばれることはないはず
-/*
-static int TILE_SIZE;
-static int CANVAS_WIDTH;
-static int CANVAS_HEIGHT;
-*/
-
-/**
- * 画像出力用のヘルパー関数
- */
 class ImageExportHelper {
 public:
     static std::string generateDefaultFilename(const std::string& extension) {
@@ -547,107 +526,9 @@ void handleButtonClicks(const sf::Vector2i& clickPos, UIManager& uiManager,
 
 /**
  * ファイル操作処理
+ * プロジェクトの保存、読み込み、画像出力を行う
  */
 
-/*
-void handleFileOperations(const sf::Vector2i& clickPos, UIManager& uiManager,
-    TilePalette& tilePalette, PatternGrid& patternGrid,
-    ColorPanel& colorPanel, Canvas& canvas) {
-
-    // プロジェクト保存
-    if (uiManager.getButton(ButtonIndex::SAVE_FILE).isClicked(clickPos, true)) {
-        const char* savePath = tinyfd_saveFileDialog("Save Project", "project.dat", 0, nullptr, nullptr);
-        if (savePath) {
-            saveProject(savePath, tilePalette.getAllPatterns(),
-                tilePalette.getAllColorPalettes(), canvas.getTileIndices());
-        }
-    }
-
-    // プロジェクト読み込み
-    if (uiManager.getButton(ButtonIndex::LOAD_FILE).isClicked(clickPos, true)) {
-        const char* loadPath = tinyfd_openFileDialog("Open Project", "", 0, nullptr, nullptr, 0);
-        if (loadPath) {
-            std::vector<std::vector<int>> patterns;
-            std::vector<std::array<sf::Color, 3>> colorSets;
-            std::vector<std::vector<int>> tileData;
-
-            if (loadProject(loadPath, patterns, colorSets, tileData)) {
-                tilePalette.loadPatterns(patterns, colorSets);
-                canvas.setTileIndices(tileData);
-                tilePalette.selectPattern(0);
-                colorPanel.setTarget(colorSets[0]);
-
-                auto flat = tilePalette.getPattern(0);
-                std::vector<std::vector<int>> grid(3, std::vector<int>(3));
-                for (int i = 0; i < 9; ++i) {
-                    grid[i / 3][i % 3] = flat[i];
-                }
-                patternGrid.setTiles(grid);
-            }
-        }
-    }
-
-    // PNG出力
-    if (uiManager.getButton(ButtonIndex::EXPORT_PNG).isClicked(clickPos, true)) {
-        exportImage(tilePalette, canvas, "png");
-    }
-
-    // JPG出力
-    if (uiManager.getButton(ButtonIndex::EXPORT_JPG).isClicked(clickPos, true)) {
-        exportImage(tilePalette, canvas, "jpg");
-    }
-}
-*/
-
-/*
-void handleFileOperations(const sf::Vector2i& clickPos, UIManager& uiManager,
-    TilePalette& tilePalette, PatternGrid& patternGrid,
-    ColorPanel& colorPanel, Canvas& canvas, GlobalColorPalette& globalColorPalette) {
-
-    // プロジェクト保存
-    if (uiManager.getButton(ButtonIndex::SAVE_FILE).isClicked(clickPos, true)) {
-        const char* savePath = tinyfd_saveFileDialog("Save Project", "project.dat", 0, nullptr, nullptr);
-        if (savePath) {
-            saveProject(savePath, tilePalette.getAllPatterns(),
-                tilePalette.getAllColorPalettes(), canvas.getTileIndices());
-        }
-    }
-
-    // プロジェクト読み込み
-    if (uiManager.getButton(ButtonIndex::LOAD_FILE).isClicked(clickPos, true)) {
-        const char* loadPath = tinyfd_openFileDialog("Open Project", "", 0, nullptr, nullptr, 0);
-        if (loadPath) {
-            std::vector<std::vector<int>> patterns;
-            std::vector<std::array<sf::Color, 3>> colorSets;
-            std::vector<std::vector<int>> tileData;
-
-            if (loadProject(loadPath, patterns, colorSets, tileData)) {
-                tilePalette.loadPatterns(patterns, colorSets);
-                canvas.setTileIndices(tileData);
-                tilePalette.selectPattern(0);
-                colorPanel.setTarget(colorSets[0]);
-
-                auto flat = tilePalette.getPattern(0);
-                std::vector<std::vector<int>> grid(3, std::vector<int>(3));
-                for (int i = 0; i < 9; ++i) {
-                    grid[i / 3][i % 3] = flat[i];
-                }
-                patternGrid.setTiles(grid);
-            }
-        }
-    }
-
-    // PNG出力（グローバルカラー対応）
-    if (uiManager.getButton(ButtonIndex::EXPORT_PNG).isClicked(clickPos, true)) {
-        exportImage(tilePalette, canvas, "png", globalColorPalette);
-    }
-
-    // JPG出力（グローバルカラー対応）
-    if (uiManager.getButton(ButtonIndex::EXPORT_JPG).isClicked(clickPos, true)) {
-        exportImage(tilePalette, canvas, "jpg", globalColorPalette);
-    }
-}
-*/
 void handleFileOperations(const sf::Vector2i& clickPos, UIManager& uiManager,
     TilePalette& tilePalette, PatternGrid& patternGrid,
     ColorPanel& colorPanel, Canvas& canvas, GlobalColorPalette& globalColorPalette) {
@@ -795,45 +676,7 @@ void handleFileOperations(const sf::Vector2i& clickPos, UIManager& uiManager,
 /**
  * 画像出力処理
  */
-/*
-void exportImage(TilePalette& tilePalette, Canvas& canvas, const std::string& format) {
-    std::string defaultName = ImageExportHelper::generateDefaultFilename(format);
-    std::string savePath = ImageExportHelper::showSaveDialog(
-        "Export " + format + " Image", defaultName, format
-    );
 
-    if (!savePath.empty()) {
-        // 拡張子チェック・追加
-        std::string expectedExt = "." + format;
-        if (format == "jpg") {
-            if (savePath.substr(std::max(0, (int)savePath.length() - 4)) != ".jpg" &&
-                savePath.substr(std::max(0, (int)savePath.length() - 5)) != ".jpeg") {
-                savePath += ".jpg";
-            }
-        }
-        else {
-            if (savePath.substr(std::max(0, (int)savePath.length() - 4)) != expectedExt) {
-                savePath += expectedExt;
-            }
-        }
-
-        bool success = canvas.exportToImage(
-            savePath,
-            tilePalette.getAllPatterns(),
-            tilePalette.getAllColorPalettes(),
-            false, // グリッド線は出力しない
-            0.0f, 1.0f
-        );
-
-        const char* message = success ?
-            ("Image exported successfully:\n" + savePath).c_str() :
-            "Failed to export image.";
-        const char* type = success ? "info" : "error";
-
-        tinyfd_messageBox(success ? "Export Complete" : "Export Failed", message, type, "ok", 1);
-    }
-}
-*/
 
 void exportImage(TilePalette& tilePalette, Canvas& canvas, const std::string& format,
     GlobalColorPalette& globalColorPalette) {
@@ -986,7 +829,7 @@ void updateGameState(const sf::Vector2i& mousePos, bool mousePressed, bool& isPa
         canvas.setDirty(true);
 
         // RGBスライダーで色が変更された場合の処理
-        // 新システム：現在編集中の色をグローバルカラーパレットに反映
+        //現在編集中の色をグローバルカラーパレットに反映
         colorPanel.updateGlobalColorFromCurrent();
 
         /*
@@ -1037,66 +880,6 @@ void updateGameState(const sf::Vector2i& mousePos, bool mousePressed, bool& isPa
  * フレーム描画
  */
 
-/*
-void renderFrame(sf::RenderWindow& window, const sf::Font& font, PatternGrid& patternGrid,
-    TilePalette& tilePalette, ColorPanel& colorPanel, Canvas& canvas,
-    CanvasView& canvasView, LargeTilePaletteOverlay& largeTilePaletteOverlay,
-    DrawingManager& drawingManager, UIManager& uiManager, const sf::Vector2i& mousePos,
-    int selectedColorIndex, int brushSize, bool showGrid, float gridSpacing,
-    float gridShrink, const sf::Color& tileGridColor, int currentLargeTileId,
-    LargeTileManager& largeTileManager, GlobalColorPalette& globalColorPalette) {
-
-    window.clear(sf::Color(30, 30, 30));
-
-    // 情報表示
-    renderInfoText(window, font, canvasView, drawingManager, currentLargeTileId,
-        largeTileManager, brushSize, selectedColorIndex, tilePalette, canvas,globalColorPalette);
-
-    // コンポーネント描画
-    if (tilePalette.getSelectedIndex() >= 0) {
-        colorPanel.setTarget(tilePalette.getSelectedColorSet());
-    }
-
-   // patternGrid.draw(window, colorPanel.getColorSet());
-    // PatternGrid描画を修正：グローバルカラーを使用
-    if (tilePalette.getSelectedIndex() >= 0) {
-        auto globalIndices = colorPanel.getGlobalColorIndices();
-        patternGrid.drawWithGlobalColors(window, globalColorPalette.getAllColors(), globalIndices);
-    }
-    else {
-        // タイルが選択されていない場合はデフォルト
-        patternGrid.drawWithGlobalColors(window, globalColorPalette.getAllColors(), { 0, 1, 2 });
-    }
-
-
-  //  tilePalette.draw(window, tilePalette.getAllColorPalettes());
-
-    tilePalette.drawWithGlobalColors(window, globalColorPalette.getAllColors());
-
-    colorPanel.draw(window);
-    largeTilePaletteOverlay.draw(window);
-    globalColorPalette.draw(window);
-
-    // キャンバス描画
-    canvas.drawWithView(window, canvasView,
-        tilePalette.getAllPatterns(),
-        tilePalette.getAllColorPalettes(),
-        showGrid, gridSpacing, gridShrink);
-
-    // UI描画
-    uiManager.drawButtons(window, font, drawingManager.getCurrentToolType(), brushSize,
-        largeTilePaletteOverlay.getVisible(), largeTileManager.getCurrentRotationDegrees());
-    uiManager.drawSliders(window, gridSpacing, gridShrink, tileGridColor);
-
-    // カーソル＆プレビュー描画
-    if (canvas.containsInView(canvasView, mousePos)) {
-        drawingManager.drawCursor(window, mousePos, canvasView, brushSize, canvas.getTileSize());
-        drawingManager.drawPreview(window, mousePos, canvasView, brushSize);
-    }
-
-    window.display();
-}
-*/
 
 void renderFrame(sf::RenderWindow& window, const sf::Font& font, PatternGrid& patternGrid,
     TilePalette& tilePalette, ColorPanel& colorPanel, Canvas& canvas,
